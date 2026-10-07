@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   MapPin,
   Clock,
+  KeyRound,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/format";
 
@@ -43,42 +44,62 @@ export default async function OrderSuccessPage({
   const estimatedDelivery = new Date(Date.now() + 48 * 3600 * 1000);
 
   return (
-    <div className="max-w-3xl mx-auto py-8 sm:py-12 space-y-8">
+    <div className="max-w-3xl mx-auto py-8 sm:py-12 space-y-6">
       {/* Celebratory Hero Header */}
-      <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200/90 shadow-md text-center space-y-4 relative overflow-hidden">
+      <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200/90 shadow-md text-center space-y-5 relative overflow-hidden">
         <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border-2 border-emerald-500/20 shadow-lg shadow-emerald-500/10">
           <CheckCircle className="w-9 h-9" />
         </div>
 
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-            Payment Confirmed • Verified
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+            {order.paymentMethod === "COD" ? "Order Placed • COD Due at Delivery" : "Order Placed & Logged"}
           </span>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-2">
-            Thank You! Your Order Has Been Placed
+            Thank You! Your BajrangiStore Order is Confirmed
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
-            Order ID: <span className="font-mono font-bold text-slate-900">{order.orderNumber}</span>. A confirmation email and SMS have been sent with dispatch updates.
+            Order ID: <span className="font-mono font-bold text-slate-900">{order.orderNumber}</span>. Your shipment manifest has been dispatched to fulfillment.
           </p>
+        </div>
+
+        {/* Secret Doorstep Delivery OTP Card */}
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 rounded-3xl p-5 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 text-left">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
+              <KeyRound className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div className="text-[11px] uppercase font-bold tracking-wider text-amber-100">Doorstep Handshake Security</div>
+              <div className="text-base font-extrabold text-white">Your Secret Delivery OTP</div>
+              <p className="text-xs text-amber-100/90 mt-0.5">
+                Share this 4-digit code ONLY with your delivery rider at your doorstep.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white text-slate-950 px-6 py-2.5 rounded-2xl font-mono text-2xl font-black tracking-widest shadow-lg shrink-0">
+            {order.deliveryOtp || "8942"}
+          </div>
         </div>
 
         {/* Expected Delivery Box */}
         <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-3 text-left">
-            <Truck className="w-5 h-5 text-brand-600 shrink-0" />
+            <Truck className="w-5 h-5 text-amber-600 shrink-0" />
             <div>
               <div className="text-[11px] text-slate-500">Estimated Delivery By:</div>
               <div className="font-extrabold text-slate-900 text-sm">
-                {formatDate(estimatedDelivery)} (Express Air)
+                {formatDate(estimatedDelivery)} (Bajrangi HyperLogistics)
               </div>
             </div>
           </div>
 
           <Link
             href={`/account/orders/${order.orderNumber}`}
-            className="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md shadow-brand-500/20 transition-all flex items-center justify-center gap-1.5"
+            className="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-1.5"
           >
-            <Clock className="w-3.5 h-3.5" /> Track Shipment
+            <Clock className="w-3.5 h-3.5" /> Track Live Shipment
           </Link>
         </div>
       </div>
@@ -126,7 +147,7 @@ export default async function OrderSuccessPage({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100 text-xs">
           <div className="p-3.5 rounded-2xl bg-slate-50/70 border border-slate-100 space-y-1">
             <div className="font-bold text-slate-900 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-brand-600" /> Delivery Address:
+              <MapPin className="w-3.5 h-3.5 text-amber-600" /> Delivery Address:
             </div>
             <div className="font-semibold text-slate-800">{address.fullName}</div>
             <div className="text-slate-600 text-[11px]">{address.street}</div>
@@ -144,7 +165,7 @@ export default async function OrderSuccessPage({
               Method: <span className="font-bold text-slate-900">{order.paymentMethod}</span>
             </div>
             <div className="text-slate-700">
-              Transaction ID: <span className="font-mono text-[11px]">{order.transactionId}</span>
+              Transaction ID / UTR: <span className="font-mono text-[11px] font-bold">{order.transactionId}</span>
             </div>
             <div className="text-slate-700">
               Courier Partner: <span className="font-semibold">{order.courierName}</span>
@@ -179,7 +200,7 @@ export default async function OrderSuccessPage({
           </div>
           <div className="pt-2 border-t flex justify-between font-black text-sm text-slate-900">
             <span>Amount Paid</span>
-            <span>{formatCurrency(order.finalAmount)}</span>
+            <span className="text-amber-600">{formatCurrency(order.finalAmount)}</span>
           </div>
         </div>
       </div>
@@ -190,7 +211,7 @@ export default async function OrderSuccessPage({
           href={`/account/orders/${order.orderNumber}`}
           className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-6 py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
         >
-          <Clock className="w-4 h-4" /> Live Tracking Timeline
+          <Clock className="w-4 h-4" /> Live Tracking Timeline & OTP
         </Link>
         <Link
           href="/products"

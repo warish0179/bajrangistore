@@ -3,15 +3,16 @@ import bcrypt from "bcryptjs";
 import { cookies, headers } from "next/headers";
 import { prisma } from "./prisma";
 
-const JWT_SECRET = process.env.JWT_SECRET || "nexmart-super-secret-jwt-key-2026-production-ready";
+const JWT_SECRET = process.env.JWT_SECRET || "bajrangistore-super-secret-jwt-key-2026-production-ready";
 
 export interface SessionUser {
   id: string;
   name: string;
   email: string;
-  role: "CUSTOMER" | "SELLER" | "ADMIN";
+  role: "CUSTOMER" | "SELLER" | "ADMIN" | "DELIVERY_WORKER";
   avatar?: string | null;
   storeSlug?: string | null;
+  walletBalance?: number;
 }
 
 export function signToken(user: SessionUser): string {
@@ -23,6 +24,7 @@ export function signToken(user: SessionUser): string {
       role: user.role,
       avatar: user.avatar,
       storeSlug: user.storeSlug,
+      walletBalance: user.walletBalance,
     },
     JWT_SECRET,
     { expiresIn: "7d" }
@@ -48,7 +50,7 @@ export async function comparePassword(password: string, hash: string): Promise<b
 export async function getSessionUser(): Promise<SessionUser | null> {
   try {
     const cookieStore = await cookies();
-    let token = cookieStore.get("nexmart_token")?.value;
+    let token = cookieStore.get("bajrangi_token")?.value || cookieStore.get("nexmart_token")?.value;
 
     if (!token) {
       const headerList = await headers();
@@ -59,21 +61,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     }
 
     if (!token) {
-      // Graceful fallback for demo guest checkouts
-      const defaultUser = await prisma.user.findFirst({
-        where: { email: "customer@nexmart.com" },
-        include: { sellerProfile: true },
-      });
-      if (defaultUser) {
-        return {
-          id: defaultUser.id,
-          name: defaultUser.name,
-          email: defaultUser.email,
-          role: defaultUser.role as any,
-          avatar: defaultUser.avatar,
-          storeSlug: defaultUser.sellerProfile?.storeSlug || null,
-        };
-      }
       return null;
     }
 
@@ -90,6 +77,7 @@ export async function getCurrentUserFromDb() {
     where: { id: session.id },
     include: {
       sellerProfile: true,
+      deliveryProfile: true,
       addresses: true,
     },
   });

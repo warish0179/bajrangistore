@@ -17,7 +17,6 @@ export async function GET(req: NextRequest) {
     if (session.role === "CUSTOMER") {
       where.userId = session.id;
     } else if (session.role === "SELLER") {
-      // Seller sees orders containing their products
       const sellerProfile = await prisma.sellerProfile.findUnique({
         where: { userId: session.id },
       });
@@ -29,6 +28,16 @@ export async function GET(req: NextRequest) {
             },
           },
         };
+      }
+    } else if (session.role === "DELIVERY_WORKER") {
+      const deliveryProfile = await prisma.deliveryProfile.findUnique({
+        where: { userId: session.id },
+      });
+      if (deliveryProfile) {
+        where.OR = [
+          { deliveryWorkerId: deliveryProfile.id },
+          { deliveryWorkerId: null, status: { in: ["READY_FOR_PICKUP", "PACKED"] } },
+        ];
       }
     }
     // Admin sees all orders
@@ -42,7 +51,13 @@ export async function GET(req: NextRequest) {
       include: {
         items: true,
         timeline: { orderBy: { timestamp: "desc" } },
-        user: { select: { name: true, email: true, phone: true } },
+        user: { select: { id: true, name: true, email: true, phone: true } },
+        deliveryWorker: {
+          include: {
+            user: { select: { name: true, phone: true } },
+          },
+        },
+        paymentTransactions: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -65,7 +80,9 @@ export async function POST(req: NextRequest) {
     const {
       items = [],
       shippingAddress,
-      paymentMethod = "UPI",
+      paymentMethod = "UPI_QR",
+      transactionRef,
+      receiptImage,
       couponCode,
     } = body;
 
@@ -106,9 +123,43 @@ export async function POST(req: NextRequest) {
     const taxAmount = Math.round(subtotal * 0.05);
     const finalAmount = Math.max(0, subtotal - discountAmount + shippingFee + taxAmount);
 
-    const orderNumber = `NEX-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const transactionId = `TXN-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-    const trackingNumber = `BD-${Math.floor(1000000 + Math.random() * 9000000)}`;
+    // Verify wallet balance if paying with WALLET
+    if (paymentMethod === "WALLET") {
+      const dbUser = await prisma.user.findUnique({ where: { id: session.id } });
+      if (!dbUser || (dbUser.walletBalance || 0) < finalAmount) {
+        return NextResponse.json(
+          {
+            error: `Insufficient BajrangiStore Wallet balance (Available: ₹${dbUser?.walletBalance || 0}, Required: ₹${finalAmount})`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Deduct wallet balance
+      await prisma.user.update({
+        where: { id: session.id },
+        data: { walletBalance: { decrement: finalAmount } },
+      });
+    }
+
+    const orderNumber = `BJR-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const trackingNumber = `BJR-EXP-${Math.floor(1000000 + Math.random() * 9000000)}`;
+    const deliveryOtp = String(Math.floor(1000 + Math.random() * 9000));
+
+    // Determine initial statuses
+    let initialStatus = "CONFIRMED";
+    let paymentStatus = "PAID";
+
+    if (paymentMethod === "COD") {
+      initialStatus = "CONFIRMED";
+      paymentStatus = "PENDING";
+    } else if (paymentMethod === "UPI_QR" || paymentMethod === "BANK_TRANSFER") {
+      initialStatus = "PAYMENT_PENDING";
+      paymentStatus = "PENDING_VERIFICATION";
+    } else if (paymentMethod === "WALLET") {
+      initialStatus = "CONFIRMED";
+      paymentStatus = "PAID";
+    }
 
     const order = await prisma.order.create({
       data: {
@@ -119,12 +170,15 @@ export async function POST(req: NextRequest) {
         shippingFee,
         taxAmount,
         finalAmount,
-        status: "CONFIRMED",
-        paymentStatus: paymentMethod === "COD" ? "PENDING" : "PAID",
+        status: initialStatus,
+        paymentStatus,
         paymentMethod,
-        transactionId,
+        transactionId: transactionRef || `TXN-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
         trackingNumber,
-        courierName: "BlueDart Express",
+        courierName: "Bajrangi HyperLogistics",
+        deliveryOtp,
+        codCollected: false,
+        codAmount: paymentMethod === "COD" ? finalAmount : 0,
         shippingAddress: typeof shippingAddress === "string" ? shippingAddress : JSON.stringify(shippingAddress),
         items: {
           create: items.map((item: any) => {
@@ -144,10 +198,15 @@ export async function POST(req: NextRequest) {
         timeline: {
           create: [
             {
-              status: "CONFIRMED",
-              title: "Order Placed & Confirmed",
-              description: `Payment verified via ${paymentMethod}. Order received by NexMart fulfillment network.`,
-              location: "NexMart Automated Gateway",
+              status: initialStatus,
+              title: paymentMethod === "COD" ? "Order Placed (Cash on Delivery)" : "Order Placed & Logged",
+              description:
+                paymentMethod === "WALLET"
+                  ? `Instant payment of ₹${finalAmount} settled via BajrangiStore Wallet Balance.`
+                  : paymentMethod === "UPI_QR" || paymentMethod === "BANK_TRANSFER"
+                  ? `Payment reference ${transactionRef || "pending"} received. Queued for Admin Verification.`
+                  : "Order received by BajrangiStore fulfillment network.",
+              location: "Bajrangi HyperLogistics Hub",
             },
           ],
         },
@@ -158,6 +217,24 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Create payment transaction record
+    if (paymentMethod === "UPI_QR" || paymentMethod === "BANK_TRANSFER" || paymentMethod === "WALLET") {
+      await prisma.paymentTransaction.create({
+        data: {
+          orderId: order.id,
+          userId: session.id,
+          amount: finalAmount,
+          paymentMethod,
+          transactionRef: transactionRef || (paymentMethod === "WALLET" ? `WALLET-${order.orderNumber}` : null),
+          receiptImage: receiptImage || null,
+          status: paymentMethod === "WALLET" ? "APPROVED" : "PENDING_VERIFICATION",
+          verifiedBy: paymentMethod === "WALLET" ? "SYSTEM_WALLET" : null,
+          verifiedAt: paymentMethod === "WALLET" ? new Date() : null,
+          adminNote: paymentMethod === "WALLET" ? "Settled instantly via customer wallet." : "Awaiting verification.",
+        },
+      });
+    }
+
     // Clear server cart for user
     await prisma.cartItem.deleteMany({
       where: { userId: session.id },
@@ -167,8 +244,8 @@ export async function POST(req: NextRequest) {
     await prisma.notification.create({
       data: {
         userId: session.id,
-        title: `Order Confirmed: ${orderNumber} 🎉`,
-        message: `Your order for ₹${finalAmount} has been placed successfully. Track shipment in real-time.`,
+        title: `Order Placed: ${orderNumber} 🎉`,
+        message: `Your order for ₹${finalAmount.toLocaleString()} has been placed. Your secret Doorstep Delivery OTP is ${deliveryOtp}.`,
         type: "ORDER",
         link: `/account/orders/${orderNumber}`,
       },

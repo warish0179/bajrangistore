@@ -13,6 +13,7 @@ export async function GET() {
       where: { id: session.id },
       include: {
         sellerProfile: true,
+        deliveryProfile: true,
       },
     });
 
@@ -28,6 +29,7 @@ export async function GET() {
         role: dbUser.role,
         avatar: dbUser.avatar,
         storeSlug: dbUser.sellerProfile?.storeSlug || null,
+        walletBalance: dbUser.walletBalance || 0,
       },
     });
   } catch (error) {

@@ -15,14 +15,18 @@ import {
   ShieldCheck,
   ChevronLeft,
   X,
+  Phone,
+  KeyRound,
+  Banknote,
+  Send,
 } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 
 const ORDER_STAGES = [
-  { key: "CONFIRMED", label: "Order Confirmed" },
-  { key: "PROCESSING", label: "Packed & Quality Checked" },
-  { key: "SHIPPED", label: "Dispatched & In Transit" },
+  { key: "CONFIRMED", label: "Confirmed" },
+  { key: "PACKED", label: "Packed at Hub" },
+  { key: "PICKED_UP", label: "Picked Up" },
   { key: "OUT_FOR_DELIVERY", label: "Out for Delivery" },
   { key: "DELIVERED", label: "Delivered" },
 ];
@@ -51,6 +55,11 @@ export default function OrderTrackingPage({
   // Invoice modal
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
 
+  // Resubmit UTR modal
+  const [isUtrModalOpen, setIsUtrModalOpen] = useState(false);
+  const [newUtrInput, setNewUtrInput] = useState("");
+  const [isSubmittingUtr, setIsSubmittingUtr] = useState(false);
+
   const fetchOrder = async () => {
     setIsLoading(true);
     try {
@@ -73,7 +82,7 @@ export default function OrderTrackingPage({
   if (isLoading) {
     return (
       <div className="py-20 flex flex-col items-center justify-center space-y-3">
-        <div className="w-10 h-10 border-4 border-brand-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
         <span className="text-xs text-slate-500">Loading order tracking timeline...</span>
       </div>
     );
@@ -83,7 +92,7 @@ export default function OrderTrackingPage({
     return (
       <div className="py-20 text-center space-y-3">
         <h2 className="text-lg font-bold text-slate-800">Order Not Found</h2>
-        <Link href="/account/orders" className="text-xs font-bold text-brand-600">
+        <Link href="/account/orders" className="text-xs font-bold text-amber-600">
           Back to Orders
         </Link>
       </div>
@@ -93,13 +102,15 @@ export default function OrderTrackingPage({
   let address: any = {};
   if (order.shippingAddress) {
     try {
-      address = JSON.parse(order.shippingAddress);
+      address = typeof order.shippingAddress === "string" ? JSON.parse(order.shippingAddress) : order.shippingAddress;
     } catch {}
   }
 
   // Determine active step index
   const stageKeys = ORDER_STAGES.map((s) => s.key);
   let activeIndex = stageKeys.indexOf(order.status);
+  if (order.status === "SELLER_PROCESSING" || order.status === "PROCESSING") activeIndex = 0;
+  if (order.status === "READY_FOR_PICKUP" || order.status === "ASSIGNED_TO_DELIVERY") activeIndex = 1;
   if (order.status === "DELIVERED") activeIndex = 4;
   else if (order.status === "CANCELLED" || order.status === "RETURN_REQUESTED" || order.status === "RETURNED") {
     activeIndex = -1;
@@ -114,7 +125,7 @@ export default function OrderTrackingPage({
         body: JSON.stringify({ action: "CANCEL", cancelReason }),
       });
       if (res.ok) {
-        showToast("Order cancelled successfully. Refund initiated.", "info");
+        showToast("Order cancelled successfully. Refund credited to BajrangiStore Wallet.", "info");
         setIsCancelModalOpen(false);
         fetchOrder();
       } else {
@@ -137,7 +148,7 @@ export default function OrderTrackingPage({
         body: JSON.stringify({ action: "RETURN", returnReason }),
       });
       if (res.ok) {
-        showToast("Return request submitted! Courier pickup will be scheduled.", "success");
+        showToast("Return request submitted! Rider doorstep pickup scheduled.", "success");
         setIsReturnModalOpen(false);
         fetchOrder();
       } else {
@@ -151,14 +162,48 @@ export default function OrderTrackingPage({
     }
   };
 
+  const handleResubmitUtr = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUtrInput.trim()) return;
+
+    setIsSubmittingUtr(true);
+    try {
+      const res = await fetch("/api/payments/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          transactionRef: newUtrInput.trim(),
+          paymentMethod: order.paymentMethod,
+        }),
+      });
+
+      if (res.ok) {
+        showToast("Updated UTR reference submitted for Admin verification!", "success");
+        setIsUtrModalOpen(false);
+        setNewUtrInput("");
+        fetchOrder();
+      } else {
+        const data = await res.json();
+        showToast(data.error || "Submission failed", "error");
+      }
+    } catch {
+      showToast("Network error submitting UTR", "error");
+    } finally {
+      setIsSubmittingUtr(false);
+    }
+  };
+
+  const isOrderActive = order.status !== "DELIVERED" && order.status !== "CANCELLED";
+
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-6 pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
           <Link
             href="/account/orders"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-brand-600 mb-1"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-amber-600 mb-1"
           >
             <ChevronLeft className="w-4 h-4" /> All Orders
           </Link>
@@ -167,15 +212,15 @@ export default function OrderTrackingPage({
             <span
               className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                 order.status === "DELIVERED"
-                  ? "bg-emerald-100 text-emerald-700"
+                  ? "bg-emerald-100 text-emerald-800"
                   : order.status === "CANCELLED"
-                  ? "bg-rose-100 text-rose-700"
+                  ? "bg-rose-100 text-rose-800"
                   : order.status === "RETURN_REQUESTED"
-                  ? "bg-amber-100 text-amber-700"
-                  : "bg-brand-100 text-brand-700"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-amber-100 text-amber-800"
               }`}
             >
-              {order.status}
+              {order.status.replace(/_/g, " ")}
             </span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -188,10 +233,10 @@ export default function OrderTrackingPage({
             onClick={() => setIsInvoiceOpen(true)}
             className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition-colors flex items-center gap-1.5 shadow-2xs"
           >
-            <FileText className="w-3.5 h-3.5 text-brand-600" /> View Invoice
+            <FileText className="w-3.5 h-3.5 text-amber-600" /> View Invoice
           </button>
 
-          {(order.status === "CONFIRMED" || order.status === "PROCESSING") && (
+          {(order.status === "CONFIRMED" || order.status === "PAYMENT_PENDING" || order.status === "PACKED") && (
             <button
               onClick={() => setIsCancelModalOpen(true)}
               className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs px-4 py-2 rounded-xl transition-colors"
@@ -211,20 +256,88 @@ export default function OrderTrackingPage({
         </div>
       </div>
 
+      {/* Payment Verification Banner if Pending */}
+      {order.paymentStatus === "PENDING_VERIFICATION" && (
+        <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <div className="font-bold text-amber-900">Payment Verification Queued</div>
+              <div className="text-amber-700">
+                Submitted reference: <span className="font-mono font-bold">{order.transactionId}</span>. The Admin Finance Desk is matching this against Jio Payments Bank statement.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsUtrModalOpen(true)}
+            className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl transition-colors shrink-0"
+          >
+            Update Reference
+          </button>
+        </div>
+      )}
+
+      {/* Secret Doorstep Delivery OTP Card (Active Orders) */}
+      {isOrderActive && (
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 rounded-3xl p-5 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
+              <KeyRound className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div className="text-[11px] uppercase font-bold tracking-wider text-amber-100">Doorstep Verification Security</div>
+              <div className="text-lg font-black">Your Secret Delivery OTP</div>
+              <p className="text-xs text-amber-100/90 mt-0.5">
+                Share this 4-digit code ONLY with your delivery rider at your doorstep.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white text-slate-900 px-6 py-2 rounded-2xl font-mono text-2xl font-black tracking-widest shadow-md shrink-0">
+            {order.deliveryOtp || "8942"}
+          </div>
+        </div>
+      )}
+
+      {/* Assigned Delivery Worker Card */}
+      {order.deliveryWorker && (
+        <div className="bg-slate-900 text-white rounded-3xl p-5 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+              <Truck className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Assigned Delivery Partner</div>
+              <div className="font-bold text-sm text-white">{order.deliveryWorker.user?.name || "Ramesh Kumar"}</div>
+              <div className="text-xs text-slate-300">
+                {order.deliveryWorker.vehicleType || "Hero Splendor"} • {order.deliveryWorker.vehicleNumber || "KA-05-EQ-4412"} • Rating 4.9⭐
+              </div>
+            </div>
+          </div>
+
+          <a
+            href={`tel:${order.deliveryWorker.user?.phone || "+919988776655"}`}
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-colors"
+          >
+            <Phone className="w-3.5 h-3.5" /> Call Rider
+          </a>
+        </div>
+      )}
+
       {/* Visual Tracking Progress Stepper */}
       {activeIndex >= 0 ? (
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-2xs space-y-6">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                <Truck className="w-4 h-4 text-brand-600" /> Real-Time Delivery Tracking
+                <Truck className="w-4 h-4 text-amber-600" /> Real-Time Delivery Tracking
               </h3>
               <p className="text-[11px] text-slate-500">
-                Courier: <span className="font-semibold text-slate-800">{order.courierName || "Express Courier"}</span> • Tracking ID: <span className="font-mono font-semibold text-slate-800">{order.trackingNumber || "Pending"}</span>
+                Courier: <span className="font-semibold text-slate-800">{order.courierName || "Bajrangi HyperLogistics"}</span> • Tracking ID: <span className="font-mono font-semibold text-slate-800">{order.trackingNumber || "Pending"}</span>
               </p>
             </div>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-              Live Updates
+            <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+              Live Manifest Updates
             </span>
           </div>
 
@@ -265,14 +378,14 @@ export default function OrderTrackingPage({
           </div>
           <p className="text-xs">
             {order.status === "CANCELLED"
-              ? `Reason: ${order.cancelReason || "Customer requested"}. Refund of ${formatCurrency(order.finalAmount)} has been credited.`
-              : `Return Reason: ${order.returnReason || "Item return requested"}. Reverse pickup initiated.`}
+              ? `Reason: ${order.cancelReason || "Customer requested"}. Refund of ${formatCurrency(order.finalAmount)} credited to BajrangiStore Wallet.`
+              : `Return Reason: ${order.returnReason || "Item return requested"}. Doorstep pickup initiated.`}
           </p>
         </div>
       )}
 
-      {/* Real-time Order Timeline Log */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* Real-time Order Timeline Log & Details */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Timeline Events Log (7 cols) */}
         <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
           <h3 className="font-extrabold text-sm text-slate-900 pb-3 border-b border-slate-100">
@@ -283,7 +396,7 @@ export default function OrderTrackingPage({
             {order.timeline && order.timeline.length > 0 ? (
               order.timeline.map((event: any, idx: number) => (
                 <div key={event.id || idx} className="relative group">
-                  <div className="absolute -left-[27px] top-1 w-3.5 h-3.5 rounded-full bg-brand-600 border-2 border-white shadow-xs" />
+                  <div className="absolute -left-[27px] top-1 w-3.5 h-3.5 rounded-full bg-amber-600 border-2 border-white shadow-xs" />
                   <div>
                     <div className="font-bold text-xs text-slate-900">{event.title}</div>
                     {event.description && (
@@ -297,7 +410,7 @@ export default function OrderTrackingPage({
                 </div>
               ))
             ) : (
-              <div className="text-xs text-slate-400">Order confirmed. Waiting for dispatch scan.</div>
+              <div className="text-xs text-slate-400">Order logged. Awaiting warehouse dispatch scan.</div>
             )}
           </div>
         </div>
@@ -350,7 +463,7 @@ export default function OrderTrackingPage({
               </div>
               <div className="flex justify-between font-black text-slate-900 text-sm pt-2 border-t">
                 <span>Total Amount Paid</span>
-                <span>{formatCurrency(order.finalAmount)}</span>
+                <span className="text-amber-600">{formatCurrency(order.finalAmount)}</span>
               </div>
             </div>
           </div>
@@ -358,7 +471,7 @@ export default function OrderTrackingPage({
           {/* Delivery Address */}
           <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-2 text-xs">
             <h4 className="font-bold text-xs uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-brand-600" /> Delivery Address
+              <MapPin className="w-3.5 h-3.5 text-amber-600" /> Delivery Address
             </h4>
             <div className="font-bold text-slate-800">{address.fullName}</div>
             <div className="text-slate-600 leading-snug">{address.street}</div>
@@ -370,6 +483,49 @@ export default function OrderTrackingPage({
         </div>
       </div>
 
+      {/* Resubmit UTR Modal */}
+      {isUtrModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b">
+              <h3 className="font-bold text-base text-slate-900">Update Payment UTR Reference</h3>
+              <button onClick={() => setIsUtrModalOpen(false)}>
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            <form onSubmit={handleResubmitUtr} className="space-y-3 text-xs">
+              <p className="text-slate-600">
+                Enter your 12-digit UTR/Reference number from your UPI or Bank transfer receipt:
+              </p>
+              <input
+                type="text"
+                required
+                value={newUtrInput}
+                onChange={(e) => setNewUtrInput(e.target.value)}
+                placeholder="e.g. 427819204812"
+                className="w-full px-3.5 py-2.5 border rounded-xl font-mono text-sm"
+              />
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsUtrModalOpen(false)}
+                  className="w-1/2 py-2.5 font-bold text-slate-600 bg-slate-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingUtr}
+                  className="w-1/2 py-2.5 font-bold text-white bg-amber-600 rounded-xl"
+                >
+                  Submit UTR
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Cancel Order Modal */}
       {isCancelModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -380,45 +536,35 @@ export default function OrderTrackingPage({
                 <X className="w-5 h-5 text-slate-400" />
               </button>
             </div>
-
-            <p className="text-xs text-slate-600">
-              Please choose a reason for cancelling this order. If paid online, a full refund of {formatCurrency(order.finalAmount)} will be initiated immediately to your payment method.
+            <p className="text-xs text-slate-500">
+              Are you sure you want to cancel this order? Any payments will be credited instantly to your BajrangiStore Wallet.
             </p>
-
-            <div className="space-y-2 text-xs">
-              {[
-                "Found a better price elsewhere",
-                "Order created by mistake",
-                "Estimated delivery time is too long",
-                "Need to change delivery address",
-                "Other reason",
-              ].map((r) => (
-                <label key={r} className="flex items-center gap-2 cursor-pointer font-medium">
-                  <input
-                    type="radio"
-                    name="cancel_r"
-                    checked={cancelReason === r}
-                    onChange={() => setCancelReason(r)}
-                    className="accent-rose-600"
-                  />
-                  <span>{r}</span>
-                </label>
-              ))}
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Reason for Cancellation</label>
+              <select
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="w-full text-xs p-2.5 border rounded-xl bg-slate-50"
+              >
+                <option value="Found a better price elsewhere">Found a better price elsewhere</option>
+                <option value="Ordered by mistake">Ordered by mistake</option>
+                <option value="Delivery time is too long">Delivery time is too long</option>
+                <option value="Need to change delivery address">Need to change delivery address</option>
+              </select>
             </div>
-
-            <div className="pt-2 flex justify-end gap-2">
+            <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setIsCancelModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-slate-600 bg-slate-100 font-bold text-xs"
+                className="w-1/2 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl"
               >
                 Keep Order
               </button>
               <button
                 onClick={handleCancelOrder}
                 disabled={isCancelling}
-                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-500/20"
+                className="w-1/2 py-2.5 text-xs font-bold text-white bg-rose-600 rounded-xl"
               >
-                {isCancelling ? "Cancelling..." : "Confirm Cancellation"}
+                {isCancelling ? "Cancelling..." : "Confirm Cancel"}
               </button>
             </div>
           </div>
@@ -430,50 +576,38 @@ export default function OrderTrackingPage({
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b">
-              <h3 className="font-bold text-base text-amber-800">
-                Request Return / Replacement
-              </h3>
+              <h3 className="font-bold text-base text-amber-700">Request Return / Replacement</h3>
               <button onClick={() => setIsReturnModalOpen(false)}>
                 <X className="w-5 h-5 text-slate-400" />
               </button>
             </div>
-
-            <p className="text-xs text-slate-600">
-              NexMart 7-Day Guarantee: Our delivery executive will inspect the item at doorstep and hand you a replacement or trigger an instant refund.
+            <p className="text-xs text-slate-500">
+              BajrangiStore offers 7-day hassle-free doorstep returns. A courier rider will inspect and collect the package.
             </p>
-
-            <div className="space-y-2 text-xs">
-              {[
-                "Product damaged or defective",
-                "Received wrong item or size",
-                "Missing accessories or parts",
-                "Item not as described on website",
-                "No longer needed",
-              ].map((r) => (
-                <label key={r} className="flex items-center gap-2 cursor-pointer font-medium">
-                  <input
-                    type="radio"
-                    name="return_r"
-                    checked={returnReason === r}
-                    onChange={() => setReturnReason(r)}
-                    className="accent-amber-600"
-                  />
-                  <span>{r}</span>
-                </label>
-              ))}
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Return Reason</label>
+              <select
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+                className="w-full text-xs p-2.5 border rounded-xl bg-slate-50"
+              >
+                <option value="Product damaged or defective">Product damaged or defective</option>
+                <option value="Item not as described">Item not as described</option>
+                <option value="Size/fit issue">Size/fit issue</option>
+                <option value="Missing parts or accessories">Missing parts or accessories</option>
+              </select>
             </div>
-
-            <div className="pt-2 flex justify-end gap-2">
+            <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setIsReturnModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-slate-600 bg-slate-100 font-bold text-xs"
+                className="w-1/2 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl"
               >
                 Cancel
               </button>
               <button
                 onClick={handleReturnOrder}
                 disabled={isReturning}
-                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-500/20"
+                className="w-1/2 py-2.5 text-xs font-bold text-white bg-amber-600 rounded-xl"
               >
                 {isReturning ? "Submitting..." : "Schedule Pickup"}
               </button>
@@ -485,77 +619,74 @@ export default function OrderTrackingPage({
       {/* Tax Invoice Modal */}
       {isInvoiceOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-8 shadow-2xl animate-in zoom-in-95 duration-150 space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-8 shadow-2xl animate-in zoom-in-95 duration-150 space-y-6 max-h-[90vh] overflow-y-auto text-xs">
+            <div className="flex items-start justify-between border-b pb-4">
               <div>
-                <h2 className="text-lg font-black text-slate-900">Tax Invoice & Cash Receipt</h2>
-                <div className="text-[11px] text-slate-400">NexMart Retail Private Limited</div>
+                <span className="text-lg font-black tracking-tight text-amber-600">BajrangiStore</span>
+                <p className="text-[10px] text-slate-400">Bharat Hyper-Market Pvt Ltd • GSTIN: 29AABCU9603R1ZM</p>
               </div>
-              <button onClick={() => setIsInvoiceOpen(false)} className="p-1 text-slate-400 hover:text-slate-600">
+              <button onClick={() => setIsInvoiceOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 text-xs gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="font-bold text-slate-500 block">Invoice Number:</span>
-                <span className="font-mono font-bold text-slate-800">INV-{order.orderNumber}</span>
-                <span className="font-bold text-slate-500 block mt-2">Date:</span>
-                <span className="text-slate-800">{formatDate(order.createdAt)}</span>
+                <div className="font-bold text-slate-900">Tax Invoice / Bill of Supply</div>
+                <div className="text-slate-500">Invoice No: INV-{order.orderNumber}</div>
+                <div className="text-slate-500">Order Date: {formatDate(order.createdAt)}</div>
+                <div className="text-slate-500">Payment: {order.paymentMethod} ({order.paymentStatus})</div>
               </div>
               <div className="text-right">
-                <span className="font-bold text-slate-500 block">GSTIN:</span>
-                <span className="font-mono text-slate-800">29AABCN8942P1Z8</span>
-                <span className="font-bold text-slate-500 block mt-2">Payment:</span>
-                <span className="text-slate-800">{order.paymentMethod} (PAID)</span>
+                <div className="font-bold text-slate-900">Billed & Shipped To:</div>
+                <div className="text-slate-600">{address.fullName}</div>
+                <div className="text-slate-500">{address.street}</div>
+                <div className="text-slate-500">{address.city}, {address.state} - {address.postalCode}</div>
               </div>
             </div>
 
-            <div className="border rounded-2xl overflow-hidden text-xs">
-              <table className="w-full">
-                <thead className="bg-slate-50 text-slate-600 font-bold border-b">
-                  <tr>
-                    <th className="p-2.5 text-left">Item Description</th>
-                    <th className="p-2.5 text-center">Qty</th>
-                    <th className="p-2.5 text-right">Price</th>
-                    <th className="p-2.5 text-right">Total</th>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b text-slate-400 font-semibold">
+                  <th className="py-2">Item Description</th>
+                  <th className="py-2 text-center">Qty</th>
+                  <th className="py-2 text-right">Unit Price</th>
+                  <th className="py-2 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {order.items.map((i: any) => (
+                  <tr key={i.id}>
+                    <td className="py-2 font-medium">{i.productTitle} {i.variantName ? `(${i.variantName})` : ""}</td>
+                    <td className="py-2 text-center">{i.quantity}</td>
+                    <td className="py-2 text-right">{formatCurrency(i.price)}</td>
+                    <td className="py-2 text-right font-bold">{formatCurrency(i.total)}</td>
                   </tr>
-                </thead>
-                <tbody className="divide-y text-slate-700">
-                  {order.items.map((item: any) => (
-                    <tr key={item.id}>
-                      <td className="p-2.5">{item.productTitle}</td>
-                      <td className="p-2.5 text-center">{item.quantity}</td>
-                      <td className="p-2.5 text-right">{formatCurrency(item.price)}</td>
-                      <td className="p-2.5 text-right font-bold">{formatCurrency(item.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
 
-            <div className="text-xs space-y-1 text-right max-w-xs ml-auto">
+            <div className="border-t pt-3 space-y-1 text-right ml-auto max-w-xs">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
                 <span>{formatCurrency(order.totalAmount)}</span>
               </div>
               <div className="flex justify-between">
-                <span>CGST (2.5%) + SGST (2.5%):</span>
+                <span>Shipping:</span>
+                <span>{order.shippingFee === 0 ? "FREE" : formatCurrency(order.shippingFee)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>GST (5%):</span>
                 <span>{formatCurrency(order.taxAmount)}</span>
               </div>
-              <div className="flex justify-between font-black text-sm text-slate-900 pt-2 border-t">
+              <div className="flex justify-between font-black text-sm text-slate-900 border-t pt-2">
                 <span>Grand Total:</span>
-                <span>{formatCurrency(order.finalAmount)}</span>
+                <span className="text-amber-600">{formatCurrency(order.finalAmount)}</span>
               </div>
             </div>
 
-            <div className="text-center pt-2">
-              <button
-                onClick={() => window.print()}
-                className="bg-brand-600 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md"
-              >
-                Print / Save PDF
-              </button>
+            <div className="text-center pt-4 border-t text-[11px] text-slate-400">
+              Thank you for shopping at BajrangiStore! Authorized digital invoice.
             </div>
           </div>
         </div>

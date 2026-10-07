@@ -84,7 +84,7 @@ export default async function HomePage() {
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Engineered for excellence, certified by NexMart quality assurance
+              Engineered for excellence, certified by BajrangiStore quality assurance
             </p>
           </div>
           <Link
@@ -103,10 +103,10 @@ export default async function HomePage() {
       </section>
 
       {/* 6. Promotional Mid-Page Banner */}
-      <div className="w-full rounded-3xl bg-gradient-to-r from-indigo-900 via-brand-800 to-purple-900 text-white p-8 md:p-12 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+      <div className="w-full rounded-3xl bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white p-8 md:p-12 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
         <div className="space-y-2 z-10 max-w-xl">
           <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm border border-white/20">
-            NexMart Elite Membership
+            BajrangiStore Elite Membership
           </span>
           <h3 className="text-2xl md:text-3xl font-black tracking-tight leading-tight">
             Unlock Same-Day Free Shipping & 5% Cashback on All Orders

@@ -12,8 +12,42 @@ export default async function CategoryPage({
 }) {
   const { slug } = await params;
 
-  const category = await prisma.category.findUnique({
-    where: { slug },
+  // Normalized slug mapping so any variant (/category/electronics, /category/fashion, etc.) seamlessly resolves
+  const slugAliases: Record<string, string> = {
+    "electronics": "electronics-audio",
+    "electronics-gadgets": "electronics-audio",
+    "gadgets": "electronics-audio",
+    "audio": "electronics-audio",
+    "audio-sound": "electronics-audio",
+    "audio-acoustics": "electronics-audio",
+    "fashion": "fashion-apparel",
+    "fashion-clothing": "fashion-apparel",
+    "clothing": "fashion-apparel",
+    "apparel": "fashion-apparel",
+    "home": "home-kitchen",
+    "home-living": "home-kitchen",
+    "home-appliances": "home-kitchen",
+    "kitchen": "home-kitchen",
+    "beauty": "beauty-grooming",
+    "skincare": "beauty-grooming",
+    "beauty-skincare": "beauty-grooming",
+    "grocery": "grocery-gourmet",
+    "gourmet": "grocery-gourmet",
+    "sports": "sports-fitness",
+    "fitness": "sports-fitness",
+    "toys": "toys-kids",
+    "kids": "toys-kids",
+    "mobiles": "mobiles-tablets",
+    "tablets": "mobiles-tablets",
+    "laptops": "laptops-computers",
+    "computers": "laptops-computers",
+    "shoes": "footwear",
+  };
+
+  const targetSlug = slugAliases[slug.toLowerCase()] || slug;
+
+  let category = await prisma.category.findUnique({
+    where: { slug: targetSlug },
     include: {
       children: true,
       products: {
@@ -24,6 +58,24 @@ export default async function CategoryPage({
       },
     },
   });
+
+  // Fallback: search by partial slug if not found
+  if (!category) {
+    category = await prisma.category.findFirst({
+      where: {
+        slug: { contains: slug.toLowerCase() },
+      },
+      include: {
+        children: true,
+        products: {
+          include: {
+            images: { orderBy: { sortOrder: "asc" } },
+            variants: true,
+          },
+        },
+      },
+    });
+  }
 
   if (!category) {
     notFound();

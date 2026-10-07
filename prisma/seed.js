@@ -4,9 +4,12 @@ const bcrypt = require("bcryptjs");
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding NexMart database...");
+  console.log("Seeding BajrangiStore multi-role production ecosystem...");
 
-  // Clean existing data
+  // Clean existing tables
+  await prisma.supportTicket.deleteMany({});
+  await prisma.paymentTransaction.deleteMany({});
+  await prisma.paymentSetting.deleteMany({});
   await prisma.supportMessage.deleteMany({});
   await prisma.notification.deleteMany({});
   await prisma.orderTimeline.deleteMany({});
@@ -22,104 +25,121 @@ async function main() {
   await prisma.banner.deleteMany({});
   await prisma.category.deleteMany({});
   await prisma.address.deleteMany({});
+  await prisma.deliveryProfile.deleteMany({});
   await prisma.sellerProfile.deleteMany({});
   await prisma.user.deleteMany({});
 
   const adminPassword = await bcrypt.hash("admin123", 10);
   const sellerPassword = await bcrypt.hash("seller123", 10);
+  const deliveryPassword = await bcrypt.hash("delivery123", 10);
   const customerPassword = await bcrypt.hash("customer123", 10);
 
-  // 1. Users
+  // 1. Core Users for the 4 Roles
   const adminUser = await prisma.user.create({
     data: {
-      name: "Alex Vance (Admin)",
-      email: "admin@nexmart.com",
+      name: "Warish Raj (Admin Controller)",
+      email: "admin@bajrangistore.com",
       passwordHash: adminPassword,
       role: "ADMIN",
-      phone: "+91 98765 43210",
+      phone: "+91 98354 00188",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      walletBalance: 25000,
     },
   });
 
-  const sellerUser1 = await prisma.user.create({
+  const sellerUser = await prisma.user.create({
     data: {
-      name: "Marcus Tech (Seller)",
-      email: "seller@nexmart.com",
+      name: "Vikram Singhania (Apex Electronics)",
+      email: "seller@bajrangistore.com",
       passwordHash: sellerPassword,
       role: "SELLER",
       phone: "+91 98111 22334",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      walletBalance: 8400,
     },
   });
 
-  const sellerUser2 = await prisma.user.create({
+  const deliveryUser = await prisma.user.create({
     data: {
-      name: "Elena Trends (Seller)",
-      email: "fashion@nexmart.com",
-      passwordHash: sellerPassword,
-      role: "SELLER",
-      phone: "+91 98222 33445",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
+      name: "Ramesh Kumar (Express Rider)",
+      email: "delivery@bajrangistore.com",
+      passwordHash: deliveryPassword,
+      role: "DELIVERY_WORKER",
+      phone: "+91 98450 11223",
+      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
+      walletBalance: 1200,
     },
   });
 
-  const customer1 = await prisma.user.create({
+  const customerUser = await prisma.user.create({
     data: {
       name: "Rahul Sharma",
-      email: "customer@nexmart.com",
+      email: "customer@bajrangistore.com",
       passwordHash: customerPassword,
       role: "CUSTOMER",
       phone: "+91 99887 76655",
       avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+      walletBalance: 2500, // Preloaded ₹2,500 wallet balance for demo!
     },
   });
 
-  const customer2 = await prisma.user.create({
+  // 2. Seller Profile
+  const sellerProfile = await prisma.sellerProfile.create({
     data: {
-      name: "Priya Patel",
-      email: "priya@nexmart.com",
-      passwordHash: customerPassword,
-      role: "CUSTOMER",
-      phone: "+91 97766 55443",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop&q=80",
-    },
-  });
-
-  // 2. Seller Profiles
-  const sellerProfile1 = await prisma.sellerProfile.create({
-    data: {
-      userId: sellerUser1.id,
-      storeName: "Apex Tech Hub",
-      storeSlug: "apex-tech-hub",
-      description: "Official authorized partner for premium electronics, flagship smartphones, gaming gear and smart home devices.",
+      userId: sellerUser.id,
+      storeName: "Apex Digital Retailers",
+      storeSlug: "apex-digital",
+      description: "Authorized flagship distributor for premium smartphones, acoustics, laptops, and certified electronics on BajrangiStore.",
       logo: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80",
       banner: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop&q=80",
       rating: 4.9,
-      totalSales: 3420,
-      gstNumber: "29AAAAA0000A1Z5",
+      totalSales: 4890,
+      gstNumber: "29AABCS8942P1Z8",
+      panNumber: "AABCS8942P",
+      bankAccount: "Jio Payments Bank •••• 2565",
+      commissionRate: 5.0,
       phone: "+91 98111 22334",
     },
   });
 
-  const sellerProfile2 = await prisma.sellerProfile.create({
+  // 3. Delivery Worker Profile
+  const deliveryProfile = await prisma.deliveryProfile.create({
     data: {
-      userId: sellerUser2.id,
-      storeName: "Aura Lifestyle & Fashion",
-      storeSlug: "aura-lifestyle",
-      description: "Curated modern wardrobe essentials, designer watches, premium leather goods, and street couture.",
-      logo: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200&auto=format&fit=crop&q=80",
-      banner: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1200&auto=format&fit=crop&q=80",
-      rating: 4.7,
-      totalSales: 1890,
-      gstNumber: "27BBBBB1111B2Z6",
-      phone: "+91 98222 33445",
+      userId: deliveryUser.id,
+      vehicleType: "BIKE",
+      vehicleNumber: "KA-05-EX-4891",
+      licenseNumber: "DL-KA0520210089421",
+      isOnline: true,
+      currentCity: "Bengaluru",
+      activeDeliveriesCount: 1,
+      completedDeliveriesCount: 142,
+      totalEarnings: 18450,
+      rating: 4.95,
     },
   });
 
-  // 3. Addresses
+  // 4. Store Payment Settings
+  await prisma.paymentSetting.create({
+    data: {
+      id: "default-setting",
+      upiId: "9835400188-k322-3@ibl",
+      upiQrImage: "/payments/bajrangi_upi_qr.jpg",
+      accountHolder: "Warish Raj",
+      accountNumber: "000521713102565",
+      ifscCode: "JIOP0000001",
+      bankName: "Jio Payments Bank",
+      paymentInstructions: "Scan the PhonePe / Jio Payments QR code or transfer directly to Warish Raj (Jio Payments Bank). Upload your 12-digit UTR reference number for instant verification.",
+      isUpiActive: true,
+      isBankTransferActive: true,
+      isCodActive: true,
+      isWalletActive: true,
+    },
+  });
+
+  // 5. Addresses
   const address1 = await prisma.address.create({
     data: {
-      userId: customer1.id,
+      userId: customerUser.id,
       fullName: "Rahul Sharma",
       phone: "+91 99887 76655",
       street: "Flat 402, Skyline Residency, Indiranagar 100 Feet Rd",
@@ -134,7 +154,7 @@ async function main() {
 
   await prisma.address.create({
     data: {
-      userId: customer1.id,
+      userId: customerUser.id,
       fullName: "Rahul Sharma (Work)",
       phone: "+91 99887 76655",
       street: "Tower B, 7th Floor, Prestige Tech Cloud Park, Marathahalli",
@@ -147,12 +167,12 @@ async function main() {
     },
   });
 
-  // 4. Categories & Subcategories
+  // 6. Categories
   const catElectronics = await prisma.category.create({
     data: {
-      name: "Electronics & Gadgets",
+      name: "Electronics & Smart Tech",
       slug: "electronics",
-      description: "Flagship phones, pro laptops, wireless earbuds & audio gear",
+      description: "Flagship phones, pro laptops, cameras & smart wearables",
       image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=80",
       icon: "Smartphone",
       featured: true,
@@ -161,33 +181,11 @@ async function main() {
 
   const catFashion = await prisma.category.create({
     data: {
-      name: "Fashion & Apparel",
+      name: "Fashion & Lifestyle",
       slug: "fashion",
-      description: "Contemporary streetwear, footwear, designer jackets & everyday style",
+      description: "Contemporary streetwear, luxury chronographs & leather jackets",
       image: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=600&auto=format&fit=crop&q=80",
       icon: "Shirt",
-      featured: true,
-    },
-  });
-
-  const catHome = await prisma.category.create({
-    data: {
-      name: "Home, Kitchen & Living",
-      slug: "home-living",
-      description: "Modern minimalist interior decor, kitchen robotics & ergonomics",
-      image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80",
-      icon: "Home",
-      featured: true,
-    },
-  });
-
-  const catBeauty = await prisma.category.create({
-    data: {
-      name: "Beauty & Grooming",
-      slug: "beauty-grooming",
-      description: "Clean organic skincare, luxury fragrances, grooming essentials",
-      image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&auto=format&fit=crop&q=80",
-      icon: "Sparkles",
       featured: true,
     },
   });
@@ -196,434 +194,283 @@ async function main() {
     data: {
       name: "Audio & Acoustics",
       slug: "audio-sound",
-      description: "Hi-Res noise cancelling headphones, audiophile monitors & party speakers",
+      description: "Hi-Res noise cancelling headphones & spatial soundbars",
       image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80",
       icon: "Headphones",
       featured: true,
     },
   });
 
+  const catHome = await prisma.category.create({
+    data: {
+      name: "Home & Appliances",
+      slug: "home-living",
+      description: "Smart kitchen coffee robotics & ergonomic living decor",
+      image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80",
+      icon: "Home",
+      featured: true,
+    },
+  });
+
   const catSports = await prisma.category.create({
     data: {
-      name: "Sports & Fitness",
+      name: "Fitness & Outdoors",
       slug: "sports-fitness",
-      description: "Smart wearables, gym essentials, athletic gear & recovery tech",
+      description: "Pro trail runners, multisport GPS watches & athletic gear",
       image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&auto=format&fit=crop&q=80",
       icon: "Activity",
       featured: true,
     },
   });
 
-  // 5. Products with Variants, Images, Specs
-  const productsData = [
+  const catBeauty = await prisma.category.create({
+    data: {
+      name: "Beauty & Grooming",
+      slug: "beauty-grooming",
+      description: "Botanical night renewal elixirs & luxury grooming",
+      image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&auto=format&fit=crop&q=80",
+      icon: "Sparkles",
+      featured: true,
+    },
+  });
+
+  // 7. Products
+  const products = [
     {
-      title: "NexPro Ultra 16 Flagship Smartphone (5G, 256GB / 512GB)",
-      slug: "nexpro-ultra-16-flagship-smartphone",
-      brand: "NexTech",
+      title: "Bajrangi Titanium Ultra 16 Flagship 5G (512GB Storage, 16GB RAM)",
+      slug: "bajrangi-titanium-ultra-16-5g",
+      brand: "Bajrangi Tech",
+      sku: "BJR-TIT-ULTRA16",
       categoryId: catElectronics.id,
-      sellerId: sellerProfile1.id,
+      sellerId: sellerProfile.id,
       basePrice: 89999,
       salePrice: 79999,
       discountPercent: 11,
-      rating: 4.9,
-      reviewCount: 428,
-      stock: 45,
+      rating: 4.95,
+      reviewCount: 512,
+      stock: 35,
       isFeatured: true,
       isDealOfTheDay: true,
       isFlashDeal: false,
-      tags: "smartphone,5g,flagship,camera,oled",
-      description: "Engineered for uncompromising speed and clarity. Featuring an ultra-bright 6.8-inch Dynamic AMOLED 144Hz display, titanium aerospace frame, and a pro-grade 200MP quadruple camera array powered by neural image processing.",
+      tags: "smartphone,flagship,5g,camera,titanium",
+      description: "Engineered for pure speed and unbreakable resilience. Powered by the next-gen 3nm AI processor, aerospace titanium alloy frame, 200MP Quad Camera with 100x Space Zoom, and 120W HyperSpeed charging.",
       highlights: JSON.stringify([
-        "6.8-inch QHD+ 144Hz Adaptive LTPO Dynamic AMOLED Display",
-        "Snapdragon 8 Gen 4 Ultra 3nm Octa-Core Processor",
-        "200MP Quad Camera with 10x Optical Periscope Zoom & 8K Video",
-        "5,400mAh Battery with 120W HyperCharge (0 to 100% in 19 mins)",
-        "IP68 Water and Dust Resistance with Armor Titanium chassis"
+        "6.8-inch QHD+ 144Hz Adaptive LTPO Dynamic AMOLED (3200 nits peak)",
+        "Octa-Core 3nm Ultra Neural Chipset with ray tracing",
+        "200MP Quad Camera with 10x Optical Periscope Zoom & 8K Dolby Vision",
+        "5,500mAh Solid-State Battery with 120W wired + 50W wireless warp charge",
+        "IP68 Water/Dust resistance with Sapphire Armor glass"
       ]),
       specs: JSON.stringify({
-        "Display": "6.8\" Quad HD+ AMOLED 144Hz, 3000 nits peak brightness",
-        "Processor": "Octa Core 3.4GHz Ultra Bionic 3nm",
-        "RAM / Storage": "12GB / 16GB LPDDR5X, UFS 4.0",
-        "Battery": "5400 mAh with 120W wired + 50W wireless charge",
-        "Rear Camera": "200MP OIS + 50MP Ultra-Wide + 48MP Periscope + 12MP Telephoto",
-        "Front Camera": "32MP 4K60HDR",
-        "OS": "NexOS 4 (Android 15 based with 5 yrs OS updates)"
+        "Processor": "3nm Octa-Core High-Octane Silicon",
+        "Display": "6.8\" Quad HD+ 144Hz Curved AMOLED",
+        "RAM / ROM": "16GB LPDDR5X + 512GB UFS 4.0",
+        "Camera": "200MP OIS + 50MP Ultra-Wide + 48MP Telephoto",
+        "Battery": "5,500 mAh (0 to 100% in 18 minutes)",
+        "Warranty": "2 Years Official Brand Doorstep Warranty"
       }),
       images: [
         { url: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=900&auto=format&fit=crop&q=80", isPrimary: true },
         { url: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=900&auto=format&fit=crop&q=80", isPrimary: false },
-        { url: "https://images.unsplash.com/photo-1580910051074-3eb694886505?w=900&auto=format&fit=crop&q=80", isPrimary: false },
       ],
       variants: [
-        { name: "Space Titanium / 256GB", sku: "NEX-16-TIT-256", price: 89999, salePrice: 79999, stock: 25, attributes: JSON.stringify({ color: "Titanium", storage: "256GB" }) },
-        { name: "Midnight Onyx / 512GB", sku: "NEX-16-ONYX-512", price: 99999, salePrice: 88999, stock: 20, attributes: JSON.stringify({ color: "Midnight Onyx", storage: "512GB" }) },
+        { name: "Space Titanium / 512GB", sku: "BJR-16-TIT-512", price: 89999, salePrice: 79999, stock: 20, attributes: JSON.stringify({ color: "Titanium", storage: "512GB" }) },
+        { name: "Saffron Gold / 512GB", sku: "BJR-16-GLD-512", price: 92999, salePrice: 82999, stock: 15, attributes: JSON.stringify({ color: "Saffron Gold", storage: "512GB" }) },
       ]
     },
     {
-      title: "Aura Acoustic Pro Over-Ear Wireless Headphones (Active Noise Cancellation)",
-      slug: "aura-acoustic-pro-headphones-anc",
-      brand: "AuraSound",
+      title: "Bajrangi Pulse ANC Studio Over-Ear Headphones (Spatial Audio)",
+      slug: "bajrangi-pulse-anc-studio-headphones",
+      brand: "Bajrangi Audio",
+      sku: "BJR-PULSE-ANC",
       categoryId: catAudio.id,
-      sellerId: sellerProfile1.id,
-      basePrice: 29999,
-      salePrice: 19999,
-      discountPercent: 33,
-      rating: 4.8,
-      reviewCount: 312,
-      stock: 60,
+      sellerId: sellerProfile.id,
+      basePrice: 24999,
+      salePrice: 16999,
+      discountPercent: 32,
+      rating: 4.88,
+      reviewCount: 380,
+      stock: 55,
       isFeatured: true,
       isDealOfTheDay: false,
       isFlashDeal: true,
       flashDealEndsAt: new Date(Date.now() + 24 * 3600 * 1000),
-      tags: "audio,headphones,anc,bluetooth,hi-res",
-      description: "Immerse yourself in concert-grade sound. Custom 45mm neodymium drivers, hybrid active noise cancellation with 8 precision microphones, and spatial audio with dynamic head tracking for unmatched depth.",
+      tags: "audio,headphones,anc,bluetooth,spatial",
+      description: "Experience pristine high-fidelity soundscapes. Custom 45mm Bio-Cellulose acoustic drivers, 48dB hybrid active noise cancellation, lossless LDAC wireless audio, and 60-hour marathon battery life.",
       highlights: JSON.stringify([
-        "Industry-leading Hybrid Adaptive Active Noise Cancellation",
-        "Up to 60 Hours battery life with quick charge (10 min = 5 hours)",
-        "Custom 45mm Bio-Cellulose dynamic drivers for ultra-low distortion",
-        "Spatial Audio with head tracking & lossless LDAC codec support",
-        "Memory foam protein leather earcups for all-day ergonomic comfort"
+        "Industry-leading 48dB Hybrid Adaptive Active Noise Cancellation",
+        "Spatial 360 Audio with dynamic head-tracking",
+        "60 Hours continuous playback with USB-C quick charge (10 min = 6 hrs)",
+        "Memory foam protein leather earcups with pressure-relief headband"
       ]),
       specs: JSON.stringify({
-        "Driver Unit": "45mm Neodymium Bio-Cellulose",
-        "Frequency Response": "4Hz - 45,000Hz (Hi-Res Audio Certified)",
-        "Bluetooth Version": "Bluetooth 5.4 with Multipoint connection",
-        "Battery Life": "60h (ANC Off) / 45h (ANC On)",
-        "Microphones": "8 microphones with AI environmental noise isolation",
-        "Weight": "254 grams"
+        "Drivers": "45mm Neodymium Bio-Cellulose",
+        "ANC Reduction": "Up to 48dB with 8 AI environmental mics",
+        "Battery Stamina": "60 Hours (ANC Off) / 45 Hours (ANC On)",
+        "Bluetooth": "Bluetooth 5.4 with Multipoint connection"
       }),
       images: [
         { url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900&auto=format&fit=crop&q=80", isPrimary: true },
         { url: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=900&auto=format&fit=crop&q=80", isPrimary: false },
-        { url: "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=900&auto=format&fit=crop&q=80", isPrimary: false },
       ],
       variants: [
-        { name: "Matte Black", sku: "AURA-ANC-BLK", price: 29999, salePrice: 19999, stock: 35, attributes: JSON.stringify({ color: "Black" }) },
-        { name: "Platinum Silver", sku: "AURA-ANC-SLV", price: 29999, salePrice: 19999, stock: 25, attributes: JSON.stringify({ color: "Silver" }) },
+        { name: "Matte Midnight Black", sku: "BJR-ANC-BLK", price: 24999, salePrice: 16999, stock: 35, attributes: JSON.stringify({ color: "Midnight Black" }) },
+        { name: "Saffron Accents Edition", sku: "BJR-ANC-GLD", price: 25999, salePrice: 17999, stock: 20, attributes: JSON.stringify({ color: "Saffron Edition" }) },
       ]
     },
     {
-      title: "ZenithBook M4 Pro 16\" Studio Laptop (32GB RAM, 1TB SSD, Liquid OLED)",
+      title: "ZenithBook M4 Pro 16\" Studio Laptop (32GB RAM, 1TB SSD, 3.5K OLED)",
       slug: "zenithbook-m4-pro-studio-laptop",
-      brand: "Zenith",
+      brand: "Zenith Pro",
+      sku: "ZEN-M4PRO-16",
       categoryId: catElectronics.id,
-      sellerId: sellerProfile1.id,
+      sellerId: sellerProfile.id,
       basePrice: 189999,
       salePrice: 169999,
       discountPercent: 10,
-      rating: 4.95,
-      reviewCount: 184,
-      stock: 22,
+      rating: 4.96,
+      reviewCount: 194,
+      stock: 18,
       isFeatured: true,
       isDealOfTheDay: true,
       isFlashDeal: false,
-      tags: "laptop,creator,workstation,m4,oled",
-      description: "The ultimate weapon for software engineers, 3D artists, and music producers. Featuring unified neural acceleration, 18-hour continuous battery stamina, whisper-quiet vapor chamber cooling, and studio-grade ports.",
+      tags: "laptop,creator,workstation,oled,32gb",
+      description: "Built for heavy compile workflows, 3D modeling, 8K video timelines, and machine learning. Featuring 16.2-inch 3.5K 120Hz Liquid OLED, 14-core workstation processor, and silent vapor-chamber cooling.",
       highlights: JSON.stringify([
         "16.2-inch 3.5K 120Hz Liquid OLED panel (1600 nits HDR)",
-        "Next-gen 14-core CPU + 30-core GPU neural architecture",
-        "32GB unified high-bandwidth memory + 1TB PCIe Gen5 SSD",
-        "Magnesium-aluminum unibody with precision haptic glass trackpad",
-        "6-speaker sound system with force-cancelling woofers"
+        "14-Core High Performance creator chip with hardware ray tracing",
+        "32GB Unified Memory + 1TB PCIe Gen5 NVMe SSD",
+        "All-day 18-hour battery life with 140W fast GaN charger"
       ]),
       specs: JSON.stringify({
-        "Screen": "16.2\" 3456x2234 Liquid OLED 120Hz ProMotion",
-        "CPU": "14-Core High Performance Creator Chipset",
-        "GPU": "30-Core Hardware Ray Tracing GPU",
-        "Memory": "32GB Unified Memory",
-        "Storage": "1TB NVMe Gen5 (7400 MB/s)",
-        "Ports": "3x Thunderbolt 5, HDMI 2.1, SDXC card slot, MagSafe charge",
-        "Weight": "1.98 kg"
+        "Display": "16.2\" 3456x2234 Liquid OLED 120Hz ProMotion",
+        "CPU / GPU": "14-Core CPU, 30-Core GPU Neural Engine",
+        "Memory": "32GB High-Bandwidth Unified",
+        "Storage": "1TB Gen5 NVMe SSD (7400 MB/s)"
       }),
       images: [
         { url: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=900&auto=format&fit=crop&q=80", isPrimary: true },
         { url: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&auto=format&fit=crop&q=80", isPrimary: false },
       ],
       variants: [
-        { name: "Space Gray / 32GB / 1TB", sku: "ZEN-16-GRY-1TB", price: 189999, salePrice: 169999, stock: 12, attributes: JSON.stringify({ color: "Space Gray", ram: "32GB", storage: "1TB" }) },
-        { name: "Silver / 64GB / 2TB", sku: "ZEN-16-SLV-2TB", price: 239999, salePrice: 219999, stock: 10, attributes: JSON.stringify({ color: "Silver", ram: "64GB", storage: "2TB" }) },
+        { name: "Space Gray / 32GB / 1TB", sku: "ZEN-16-32-1TB", price: 189999, salePrice: 169999, stock: 18, attributes: JSON.stringify({ color: "Space Gray", ram: "32GB" }) },
       ]
     },
     {
-      title: "Kore Carbon Chronograph Men's Automatic Luxury Watch",
-      slug: "kore-carbon-chronograph-mens-watch",
-      brand: "Kore Geneve",
+      title: "Bajrangi Kronos Carbon Chronograph Automatic Watch",
+      slug: "bajrangi-kronos-carbon-chronograph-watch",
+      brand: "Bajrangi Horology",
+      sku: "BJR-KRONOS-CARBON",
       categoryId: catFashion.id,
-      sellerId: sellerProfile2.id,
+      sellerId: sellerProfile.id,
       basePrice: 34999,
       salePrice: 24999,
       discountPercent: 28,
-      rating: 4.7,
-      reviewCount: 96,
-      stock: 30,
+      rating: 4.82,
+      reviewCount: 110,
+      stock: 25,
       isFeatured: true,
       isDealOfTheDay: false,
       isFlashDeal: true,
       flashDealEndsAt: new Date(Date.now() + 18 * 3600 * 1000),
-      tags: "watch,luxury,fashion,automatic,chronograph",
-      description: "A testament to mechanical excellence. Encased in forged carbon fiber with sapphire crystal glass, 28-jewel automatic movement, and a breathable FKM vulcanized rubber strap.",
+      tags: "watch,luxury,fashion,automatic,carbon",
+      description: "Forged from aerospace carbon fiber and surgical 316L stainless steel. Encased with scratchproof double-domed sapphire crystal, 28-jewel automatic movement, and vulcanized FKM sports strap.",
       highlights: JSON.stringify([
-        "Forged Carbon fiber bezel with aerospace 316L stainless steel case",
-        "28-Jewel Swiss-calibrated automatic movement with 48h power reserve",
+        "Forged Carbon fiber bezel with aerospace 316L stainless steel",
+        "28-Jewel automatic self-winding movement with 48h power reserve",
         "Anti-reflective scratchproof sapphire crystal glass",
-        "100M / 10 ATM Water Resistance rating",
-        "Luminescent Super-LumiNova markers for night visibility"
+        "100M / 10 ATM Water Resistance rating"
       ]),
       specs: JSON.stringify({
         "Case Diameter": "42 mm",
         "Case Thickness": "11.8 mm",
-        "Movement": "Automatic Self-Winding Chronograph Calibre",
-        "Water Resistance": "100 Meters / 10 ATM",
-        "Strap Material": "High-grade FKM Rubber with deployant buckle"
+        "Glass": "Double-Domed Anti-Reflective Sapphire Crystal",
+        "Water Resistance": "100 Meters / 10 ATM"
       }),
       images: [
         { url: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=900&auto=format&fit=crop&q=80", isPrimary: true },
         { url: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=900&auto=format&fit=crop&q=80", isPrimary: false },
       ],
       variants: [
-        { name: "Stealth Black Carbon", sku: "KORE-CHRONO-BLK", price: 34999, salePrice: 24999, stock: 15, attributes: JSON.stringify({ color: "Stealth Black" }) },
-        { name: "Rose Gold Accent Carbon", sku: "KORE-CHRONO-GLD", price: 37999, salePrice: 26999, stock: 15, attributes: JSON.stringify({ color: "Rose Gold" }) },
+        { name: "Stealth Carbon Black", sku: "BJR-CRB-BLK", price: 34999, salePrice: 24999, stock: 25, attributes: JSON.stringify({ color: "Stealth Black" }) },
       ]
     },
     {
-      title: "OmniGrip Performance Pro Trail Running Shoes",
-      slug: "omnigrip-performance-trail-running-shoes",
+      title: "OmniStrides Nitro Pro Trail Running Shoes",
+      slug: "omnistrides-nitro-pro-trail-running-shoes",
       brand: "OmniStrides",
+      sku: "OMNI-NITRO-PRO",
       categoryId: catSports.id,
-      sellerId: sellerProfile2.id,
+      sellerId: sellerProfile.id,
       basePrice: 8999,
       salePrice: 5499,
       discountPercent: 38,
-      rating: 4.65,
-      reviewCount: 215,
-      stock: 80,
-      isFeatured: true,
+      rating: 4.7,
+      reviewCount: 240,
+      stock: 60,
+      isFeatured: false,
       isDealOfTheDay: false,
       isFlashDeal: false,
-      tags: "shoes,running,fitness,trail,comfort",
-      description: "Engineered for high-mileage comfort over rugged terrains and city marathons. Features nitrogen-infused rebound foam, carbon propulsion plate, and Vibram Megagrip traction lug soles.",
+      tags: "shoes,running,sports,trail,marathon",
+      description: "Built for endurance and speed across rugged trails and urban marathons. Features supercritical nitrogen foam, carbon propulsion plate, and Vibram Megagrip traction soles.",
       highlights: JSON.stringify([
-        "Supercritical nitrogen-infused EVA midsole for maximum energy return",
+        "Supercritical nitrogen-infused EVA midsole with 80% energy return",
         "Full-length curved carbon propulsion plate for smoother forward rolling",
-        "Breathable engineered ripstop mesh upper with moisture wicking",
-        "Vibram Megagrip outsole with 4.5mm multi-directional traction lugs"
+        "Vibram Megagrip 4.5mm multi-terrain traction lug soles"
       ]),
       specs: JSON.stringify({
         "Drop": "8mm (Heel 36mm / Forefoot 28mm)",
         "Weight": "235 grams (Size 9)",
-        "Terrain": "Trail, Mountain, Road, Mixed",
-        "Closure": "Quicklace speed lacing system"
+        "Upper": "Engineered Ripstop Breathable Mesh"
       }),
       images: [
         { url: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900&auto=format&fit=crop&q=80", isPrimary: true },
-        { url: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=900&auto=format&fit=crop&q=80", isPrimary: false },
       ],
       variants: [
-        { name: "Crimson Red / Size 8 UK", sku: "OMNI-RED-8", price: 8999, salePrice: 5499, stock: 20, attributes: JSON.stringify({ color: "Crimson Red", size: "8 UK" }) },
-        { name: "Crimson Red / Size 9 UK", sku: "OMNI-RED-9", price: 8999, salePrice: 5499, stock: 25, attributes: JSON.stringify({ color: "Crimson Red", size: "9 UK" }) },
-        { name: "Crimson Red / Size 10 UK", sku: "OMNI-RED-10", price: 8999, salePrice: 5499, stock: 15, attributes: JSON.stringify({ color: "Crimson Red", size: "10 UK" }) },
-        { name: "Stealth Grey / Size 9 UK", sku: "OMNI-GRY-9", price: 8999, salePrice: 5499, stock: 20, attributes: JSON.stringify({ color: "Stealth Grey", size: "9 UK" }) },
+        { name: "Crimson Blaze / Size 9 UK", sku: "OMNI-RED-9UK", price: 8999, salePrice: 5499, stock: 30, attributes: JSON.stringify({ color: "Crimson Blaze", size: "9 UK" }) },
+        { name: "Crimson Blaze / Size 10 UK", sku: "OMNI-RED-10UK", price: 8999, salePrice: 5499, stock: 30, attributes: JSON.stringify({ color: "Crimson Blaze", size: "10 UK" }) },
       ]
     },
     {
-      title: "RoboChef Smart Induction Espresso & Multi-Brewer Machine",
-      slug: "robochef-smart-induction-espresso-machine",
-      brand: "RoboChef Kitchen",
+      title: "RoboChef Smart Barista 19-Bar Espresso Machine",
+      slug: "robochef-smart-barista-espresso-machine",
+      brand: "RoboChef",
+      sku: "ROBO-BARISTA-19",
       categoryId: catHome.id,
-      sellerId: sellerProfile1.id,
+      sellerId: sellerProfile.id,
       basePrice: 42999,
       salePrice: 31999,
       discountPercent: 25,
-      rating: 4.85,
-      reviewCount: 142,
-      stock: 35,
+      rating: 4.88,
+      reviewCount: 165,
+      stock: 22,
       isFeatured: true,
       isDealOfTheDay: true,
       isFlashDeal: false,
-      tags: "kitchen,coffee,espresso,smart home,appliances",
-      description: "Barista-grade coffee at the touch of a button. Features dual thermo-block boilers, 19-bar Italian pressure pump, integrated conical burr grinder with 30 micro-settings, and automatic microfoam milk steaming.",
+      tags: "kitchen,coffee,espresso,smart home",
+      description: "Café-quality lattes and espresso shots with touch of a button. Features dual thermo-block boilers, 19-bar Italian pressure pump, integrated conical burr grinder, and automatic microfoam milk steaming.",
       highlights: JSON.stringify([
-        "Commercial 19-bar Italian Ulka pressure pump",
-        "Built-in 250g bean hopper with stainless steel conical burrs",
-        "Touchscreen PID temperature control and shot timer",
-        "Automatic steam wand creating silky velvet microfoam for latte art",
-        "Wi-Fi connectivity to customize brew profiles from your phone"
+        "Commercial 19-bar Italian pressure pump with digital PID temperature control",
+        "Integrated stainless steel conical burr grinder with 30 micro-adjustments",
+        "Automatic steam wand creating silky velvet microfoam for latte art"
       ]),
       specs: JSON.stringify({
-        "Pump Pressure": "19 Bar",
-        "Water Tank Capacity": "2.2 Liters (Removable)",
-        "Heating System": "Dual Thermo-Jet with 3-second rapid warmup",
-        "Power Rating": "1650W",
-        "Grind Settings": "30 Levels with precise digital dosing"
+        "Pump": "19 Bar Italian Ulka",
+        "Boilers": "Dual Thermo-Block with 3-second rapid warmup",
+        "Tank": "2.2L Removable Water Reservoir"
       }),
       images: [
         { url: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=900&auto=format&fit=crop&q=80", isPrimary: true },
-        { url: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=900&auto=format&fit=crop&q=80", isPrimary: false },
       ],
       variants: [
-        { name: "Brushed Stainless Steel", sku: "ROBO-BREW-SILVER", price: 42999, salePrice: 31999, stock: 20, attributes: JSON.stringify({ finish: "Brushed Steel" }) },
-        { name: "Matte Midnight Black", sku: "ROBO-BREW-BLK", price: 44999, salePrice: 33999, stock: 15, attributes: JSON.stringify({ finish: "Matte Black" }) },
-      ]
-    },
-    {
-      title: "LuxeSilk Botanical Night Renewal Serum & Peptide Complex (50ml)",
-      slug: "luxesilk-botanical-night-renewal-serum",
-      brand: "LuxeOrganics",
-      categoryId: catBeauty.id,
-      sellerId: sellerProfile2.id,
-      basePrice: 3999,
-      salePrice: 2499,
-      discountPercent: 37,
-      rating: 4.9,
-      reviewCount: 388,
-      stock: 120,
-      isFeatured: false,
-      isDealOfTheDay: false,
-      isFlashDeal: true,
-      flashDealEndsAt: new Date(Date.now() + 12 * 3600 * 1000),
-      tags: "beauty,skincare,serum,anti-aging,organic",
-      description: "Revitalize your skin overnight. Infused with pure Bakuchiol, quad-peptide complex, hyaluronic acid spheres, and niacinamide to boost firmness, smoothen texture, and restore luminous radiance.",
-      highlights: JSON.stringify([
-        "Formulated with 2% Bakuchiol (gentle natural retinol alternative)",
-        "Multi-molecular weight hyaluronic acid for deep dermal hydration",
-        "Cruelty-free, vegan certified, paraben and sulfate free",
-        "Dermatologically tested and non-comedogenic for all skin types"
-      ]),
-      specs: JSON.stringify({
-        "Volume": "50 ml / 1.7 fl oz",
-        "Key Ingredients": "Bakuchiol, Peptides, Niacinamide, Squalane",
-        "Skin Type": "Dry, Normal, Sensitive, Combination",
-        "Formulation": "Lightweight silky fast-absorbing elixir"
-      }),
-      images: [
-        { url: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=900&auto=format&fit=crop&q=80", isPrimary: true },
-        { url: "https://images.unsplash.com/photo-1608248597359-009c91f1b6ee?w=900&auto=format&fit=crop&q=80", isPrimary: false },
-      ],
-      variants: [
-        { name: "Standard 50ml Dropper Bottle", sku: "LUXE-SERUM-50ML", price: 3999, salePrice: 2499, stock: 120, attributes: JSON.stringify({ size: "50ml" }) },
-      ]
-    },
-    {
-      title: "Verve Premium Italian Leather Bomber Jacket (Handcrafted)",
-      slug: "verve-italian-leather-bomber-jacket",
-      brand: "Verve Atelier",
-      categoryId: catFashion.id,
-      sellerId: sellerProfile2.id,
-      basePrice: 18999,
-      salePrice: 12999,
-      discountPercent: 31,
-      rating: 4.8,
-      reviewCount: 77,
-      stock: 40,
-      isFeatured: true,
-      isDealOfTheDay: false,
-      isFlashDeal: false,
-      tags: "jacket,leather,fashion,winter,outerwear",
-      description: "Crafted from 100% full-grain top-tier nappa lambskin leather. Features antique brass YKK zippers, diamond-quilted thermal interior lining, and ribbed merino wool cuffs for timeless luxury.",
-      highlights: JSON.stringify([
-        "100% Genuine Full-Grain Lambskin Nappa Leather",
-        "Heavy-duty antiqued brass hardware with smooth gliding YKK zippers",
-        "Satin quilt interior with dual concealed interior passport pockets",
-        "Ribbed knitted collar and waist hem for snug cold-weather warmth"
-      ]),
-      specs: JSON.stringify({
-        "Shell Material": "100% Genuine Lambskin Leather",
-        "Lining": "100% Poly-satin quilted with polyfill insulation",
-        "Pockets": "2 exterior welt pockets, 2 interior welt security pockets",
-        "Care": "Professional leather clean only"
-      }),
-      images: [
-        { url: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=900&auto=format&fit=crop&q=80", isPrimary: true },
-        { url: "https://images.unsplash.com/photo-1521223890158-f9f7c3d5d504?w=900&auto=format&fit=crop&q=80", isPrimary: false },
-      ],
-      variants: [
-        { name: "Cognac Tan / Medium", sku: "VERVE-JCK-TAN-M", price: 18999, salePrice: 12999, stock: 15, attributes: JSON.stringify({ color: "Cognac Tan", size: "M" }) },
-        { name: "Cognac Tan / Large", sku: "VERVE-JCK-TAN-L", price: 18999, salePrice: 12999, stock: 15, attributes: JSON.stringify({ color: "Cognac Tan", size: "L" }) },
-        { name: "Obsidian Black / Large", sku: "VERVE-JCK-BLK-L", price: 18999, salePrice: 12999, stock: 10, attributes: JSON.stringify({ color: "Obsidian Black", size: "L" }) },
-      ]
-    },
-    {
-      title: "PulseFit Smart GPS Multisport Health & Recovery Watch",
-      slug: "pulsefit-smart-gps-multisport-watch",
-      brand: "PulseTech",
-      categoryId: catSports.id,
-      sellerId: sellerProfile1.id,
-      basePrice: 22999,
-      salePrice: 14999,
-      discountPercent: 34,
-      rating: 4.75,
-      reviewCount: 290,
-      stock: 65,
-      isFeatured: false,
-      isDealOfTheDay: true,
-      isFlashDeal: false,
-      tags: "smartwatch,fitness,gps,heartrate,sleep",
-      description: "Your 24/7 athletic performance coach. Features dual-frequency GNSS positioning, HRV recovery analytics, SpO2 blood oxygen tracking, 14-day battery reserve, and AMOLED sunlight display.",
-      highlights: JSON.stringify([
-        "Dual-frequency multi-satellite GPS for pin-point running route maps",
-        "Advanced sleep stages, HRV (Heart Rate Variability) stress recovery index",
-        "1.43-inch Always-On Sapphire AMOLED display with scratch resistance",
-        "5 ATM 50-meter waterproof rating with open water swim tracking"
-      ]),
-      specs: JSON.stringify({
-        "Battery": "Up to 14 days normal usage / 36 hours continuous GPS",
-        "Connectivity": "Bluetooth 5.3, Wi-Fi, NFC Contactless Pay",
-        "Sensors": "Gen 5 Optical Heart Rate, Pulse Ox, Barometric Altimeter, Compass",
-        "Compatibility": "iOS and Android with sync to Strava and Apple Health"
-      }),
-      images: [
-        { url: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=900&auto=format&fit=crop&q=80", isPrimary: true },
-        { url: "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=900&auto=format&fit=crop&q=80", isPrimary: false },
-      ],
-      variants: [
-        { name: "Shadow Black / Silicone Band", sku: "PULSE-GPS-BLK", price: 22999, salePrice: 14999, stock: 40, attributes: JSON.stringify({ color: "Shadow Black" }) },
-        { name: "Glacier White / Silicone Band", sku: "PULSE-GPS-WHT", price: 22999, salePrice: 14999, stock: 25, attributes: JSON.stringify({ color: "Glacier White" }) },
-      ]
-    },
-    {
-      title: "LumaSound Cinema Pulse 5.1 Dolby Atmos Soundbar with Wireless Subwoofer",
-      slug: "lumasound-cinema-pulse-dolby-atmos-soundbar",
-      brand: "LumaSound",
-      categoryId: catAudio.id,
-      sellerId: sellerProfile1.id,
-      basePrice: 38999,
-      salePrice: 26999,
-      discountPercent: 30,
-      rating: 4.8,
-      reviewCount: 165,
-      stock: 28,
-      isFeatured: true,
-      isDealOfTheDay: false,
-      isFlashDeal: false,
-      tags: "soundbar,home theater,dolby atmos,audio,wireless",
-      description: "Transform your living room into an IMAX theater. True 5.1.2 physical channel configuration, up-firing Dolby Atmos speakers, 450W total peak output, and a booming 8-inch wireless subwoofer.",
-      highlights: JSON.stringify([
-        "True Dolby Atmos & DTS:X 3D spatial acoustic virtualization",
-        "450 Watts of peak room-filling sound with dedicated center speech channel",
-        "8-inch long-throw wireless subwoofer for visceral, bone-rattling bass",
-        "HDMI eARC with 4K HDR10+ and Dolby Vision passthrough",
-        "AirPlay 2, Spotify Connect, and Bluetooth 5.3 streaming"
-      ]),
-      specs: JSON.stringify({
-        "Channels": "5.1.2 Dedicated Surround",
-        "Total Power": "450W Peak / 220W RMS",
-        "Subwoofer Type": "8-inch Down-firing Wireless Ported",
-        "Inputs": "HDMI eARC, Optical, AUX 3.5mm, USB, Bluetooth",
-        "Dimensions": "Soundbar: 980 x 65 x 105 mm, Sub: 240 x 380 x 300 mm"
-      }),
-      images: [
-        { url: "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=900&auto=format&fit=crop&q=80", isPrimary: true },
-        { url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900&auto=format&fit=crop&q=80", isPrimary: false },
-      ],
-      variants: [
-        { name: "Gunmetal Acoustic Fabric", sku: "LUMA-51-SND", price: 38999, salePrice: 26999, stock: 28, attributes: JSON.stringify({ color: "Gunmetal" }) },
+        { name: "Brushed Steel Edition", sku: "ROBO-STEEL-19", price: 42999, salePrice: 31999, stock: 22, attributes: JSON.stringify({ finish: "Brushed Steel" }) },
       ]
     },
   ];
 
-  for (const item of productsData) {
+  for (const item of products) {
     const { images, variants, ...prodFields } = item;
-    const product = await prisma.product.create({
+    const createdProduct = await prisma.product.create({
       data: {
         ...prodFields,
         images: {
@@ -647,83 +494,25 @@ async function main() {
       },
     });
 
-    // Add a couple of realistic reviews for the product
     await prisma.review.create({
       data: {
-        productId: product.id,
-        userId: customer1.id,
+        productId: createdProduct.id,
+        userId: customerUser.id,
         rating: 5,
-        title: "Phenomenal build quality & exceeds expectations!",
-        comment: "Received the package within 24 hours in pristine tamper-evident packaging. The performance is blisteringly fast and the design feels every bit as premium as flagship brands. Strongly recommended!",
-        helpfulCount: 24,
-        verifiedPurchase: true,
-      },
-    });
-
-    await prisma.review.create({
-      data: {
-        productId: product.id,
-        userId: customer2.id,
-        rating: 4,
-        title: "Very happy with the purchase, great value",
-        comment: "Everything works seamlessly out of the box. Delivery was swift. The materials feel very solid and long-lasting.",
-        helpfulCount: 11,
+        title: "Spectacular performance and unmatched doorstep delivery speed!",
+        comment: "Received the package within 18 hours in tamper-evident sealed packaging. Verified by OTP with delivery agent Ramesh. Premium build and exceptional performance!",
+        helpfulCount: 38,
         verifiedPurchase: true,
       },
     });
   }
 
-  // 6. Promotional Banners
-  await prisma.banner.createMany({
-    data: [
-      {
-        title: "Mega Fest Mega Savings 2026",
-        subtitle: "Up to 70% Off on Flagships, 4K Smart Laptops, and Luxury Fashion",
-        image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1600&auto=format&fit=crop&q=80",
-        link: "/products",
-        buttonText: "Explore Deals",
-        badge: "LIMITED TIME ONLY",
-        type: "HERO",
-        sortOrder: 1,
-      },
-      {
-        title: "Audiophile Soundscapes",
-        subtitle: "Next-gen Spatial Audio & Active Noise Cancellation from ₹19,999",
-        image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=1600&auto=format&fit=crop&q=80",
-        link: "/category/audio-sound",
-        buttonText: "Hear the Difference",
-        badge: "NEW LAUNCH",
-        type: "HERO",
-        sortOrder: 2,
-      },
-      {
-        title: "Urban Minimalist Couture",
-        subtitle: "Handcrafted Italian Leather & Bespoke Timepieces for the Modern Wardrobe",
-        image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&auto=format&fit=crop&q=80",
-        link: "/category/fashion",
-        buttonText: "Shop Collection",
-        badge: "TRENDING NOW",
-        type: "HERO",
-        sortOrder: 3,
-      },
-    ],
-  });
-
-  // 7. Coupons
+  // 8. Coupons
   await prisma.coupon.createMany({
     data: [
       {
-        code: "NEX50",
-        description: "50% off on first order up to ₹500",
-        discountType: "PERCENT",
-        discountValue: 50,
-        minOrderAmount: 999,
-        maxDiscount: 500,
-        isActive: true,
-      },
-      {
-        code: "SUPER1000",
-        description: "Flat ₹1,000 off on cart value above ₹9,999",
+        code: "BAJRANGI1000",
+        description: "Flat ₹1,000 off on all carts above ₹9,999",
         discountType: "FIXED",
         discountValue: 1000,
         minOrderAmount: 9999,
@@ -731,213 +520,272 @@ async function main() {
         isActive: true,
       },
       {
-        code: "FESTIVE20",
-        description: "20% festive discount up to ₹2,500 on all electronics",
+        code: "BAJRANGI50",
+        description: "50% off on your order up to ₹500",
         discountType: "PERCENT",
-        discountValue: 20,
-        minOrderAmount: 4999,
-        maxDiscount: 2500,
+        discountValue: 50,
+        minOrderAmount: 999,
+        maxDiscount: 500,
         isActive: true,
       },
       {
         code: "FREESHIP",
-        description: "Free express shipping on all orders",
+        description: "Free express delivery across India",
         discountType: "FIXED",
-        discountValue: 99,
+        discountValue: 70,
         minOrderAmount: 499,
-        maxDiscount: 99,
+        maxDiscount: 70,
         isActive: true,
       },
     ],
   });
 
-  // 8. Sample Orders for customer1
-  const firstProduct = await prisma.product.findFirst({
-    include: { variants: true, images: true },
-  });
-
-  if (firstProduct) {
-    const order1 = await prisma.order.create({
-      data: {
-        orderNumber: "NEX-2026-8942",
-        userId: customer1.id,
-        totalAmount: firstProduct.salePrice,
-        discountAmount: 1000,
-        shippingFee: 0,
-        taxAmount: 250,
-        finalAmount: firstProduct.salePrice - 1000 + 250,
-        status: "SHIPPED",
-        paymentStatus: "PAID",
-        paymentMethod: "UPI",
-        transactionId: "UPI-TXN-9847291834",
-        trackingNumber: "DTDC-EXP-9921448",
-        courierName: "BlueDart Express",
-        shippingAddress: JSON.stringify({
-          fullName: "Rahul Sharma",
-          phone: "+91 99887 76655",
-          street: "Flat 402, Skyline Residency, Indiranagar 100 Feet Rd",
-          city: "Bengaluru",
-          state: "Karnataka",
-          postalCode: "560038",
-          country: "India",
-        }),
-        items: {
-          create: [
-            {
-              productId: firstProduct.id,
-              variantId: firstProduct.variants[0]?.id || null,
-              productTitle: firstProduct.title,
-              variantName: firstProduct.variants[0]?.name || "Default",
-              productImage: firstProduct.images[0]?.url || "",
-              price: firstProduct.salePrice,
-              quantity: 1,
-              total: firstProduct.salePrice,
-            },
-          ],
-        },
-        timeline: {
-          create: [
-            {
-              status: "CONFIRMED",
-              title: "Order Placed & Verified",
-              description: "Payment confirmed via UPI. Order sent to merchant for packing.",
-              location: "NexMart Automated Gateway",
-              timestamp: new Date(Date.now() - 48 * 3600 * 1000),
-            },
-            {
-              status: "PROCESSING",
-              title: "Packed & Quality Checked",
-              description: "Items packed with secure tamper-proof thermal bubble wrap.",
-              location: "Apex Tech Fulfillment Hub, Bengaluru",
-              timestamp: new Date(Date.now() - 36 * 3600 * 1000),
-            },
-            {
-              status: "SHIPPED",
-              title: "Dispatched via BlueDart Air Express",
-              description: "Package in transit to nearest regional distribution hub.",
-              location: "BlueDart Central Sort Facility, Whitefield",
-              timestamp: new Date(Date.now() - 12 * 3600 * 1000),
-            },
-          ],
-        },
-      },
-    });
-
-    // Delivered order
-    await prisma.order.create({
-      data: {
-        orderNumber: "NEX-2026-7819",
-        userId: customer1.id,
-        totalAmount: 19999,
-        discountAmount: 500,
-        shippingFee: 0,
-        taxAmount: 180,
-        finalAmount: 19679,
-        status: "DELIVERED",
-        paymentStatus: "PAID",
-        paymentMethod: "CARD",
-        transactionId: "CARD-AUTH-654819",
-        trackingNumber: "BD-9821419",
-        courierName: "Delhivery Air",
-        shippingAddress: JSON.stringify({
-          fullName: "Rahul Sharma",
-          phone: "+91 99887 76655",
-          street: "Flat 402, Skyline Residency, Indiranagar 100 Feet Rd",
-          city: "Bengaluru",
-          state: "Karnataka",
-          postalCode: "560038",
-          country: "India",
-        }),
-        items: {
-          create: [
-            {
-              productId: firstProduct.id,
-              variantId: firstProduct.variants[0]?.id || null,
-              productTitle: "Aura Acoustic Pro Over-Ear Wireless Headphones",
-              variantName: "Matte Black",
-              productImage: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900&auto=format&fit=crop&q=80",
-              price: 19999,
-              quantity: 1,
-              total: 19999,
-            },
-          ],
-        },
-        timeline: {
-          create: [
-            {
-              status: "CONFIRMED",
-              title: "Order Placed",
-              description: "Paid with HDFC Millennia Credit Card ending in 4082.",
-              location: "Online",
-              timestamp: new Date(Date.now() - 5 * 24 * 3600 * 1000),
-            },
-            {
-              status: "SHIPPED",
-              title: "Shipped",
-              description: "Dispatched with Delhivery Air Tracking #BD-9821419.",
-              location: "Apex Warehouse Hub",
-              timestamp: new Date(Date.now() - 4 * 24 * 3600 * 1000),
-            },
-            {
-              status: "DELIVERED",
-              title: "Delivered Successfully",
-              description: "Handed over to customer Rahul Sharma. OTP verified at doorstep.",
-              location: "Indiranagar, Bengaluru",
-              timestamp: new Date(Date.now() - 3 * 24 * 3600 * 1000),
-            },
-          ],
-        },
-      },
-    });
-  }
-
-  // 9. Sample Notifications
-  await prisma.notification.createMany({
+  // 9. Hero Banners
+  await prisma.banner.createMany({
     data: [
       {
-        userId: customer1.id,
-        title: "Order Shipped! 🚀",
-        message: "Your order NEX-2026-8942 is on its way via BlueDart. Expected delivery tomorrow.",
-        type: "ORDER",
-        link: "/account/orders/NEX-2026-8942",
-        read: false,
-      },
-      {
-        userId: customer1.id,
-        title: "⚡ Flash Deal Alert: 33% Off on Aura Acoustic Pro",
-        message: "Your bookmarked headphones are on a limited 24h flash sale. Stock running out fast!",
-        type: "PRICE_DROP",
-        link: "/products/aura-acoustic-pro-headphones-anc",
-        read: false,
-      },
-      {
-        userId: customer1.id,
-        title: "Welcome to NexMart Club 🎉",
-        message: "Use code NEX50 on your cart for 50% discount up to ₹500 on all orders above ₹999.",
-        type: "PROMO",
+        title: "Bajrangi Grand Festival 2026",
+        subtitle: "Up to 70% Off on Flagship Phones, Studio OLED Laptops & Chronographs",
+        image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1600&auto=format&fit=crop&q=80",
         link: "/products",
-        read: true,
+        buttonText: "Shop Grand Deals",
+        badge: "SACRED TRUST • HYPER SPEED",
+        type: "HERO",
+        sortOrder: 1,
+      },
+      {
+        title: "Titanium Ultra 16 Flagship",
+        subtitle: "The Ultimate 3nm Powerhouse with 200MP Quad Camera & 120W Warp Charge",
+        image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1600&auto=format&fit=crop&q=80",
+        link: "/products/bajrangi-titanium-ultra-16-5g",
+        buttonText: "Discover Power",
+        badge: "FLAGSHIP LAUNCH",
+        type: "HERO",
+        sortOrder: 2,
+      },
+      {
+        title: "Audiophile Soundscapes",
+        subtitle: "48dB Adaptive Noise Cancellation & 60-Hour Battery from ₹16,999",
+        image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=1600&auto=format&fit=crop&q=80",
+        link: "/category/audio-sound",
+        buttonText: "Hear the Difference",
+        badge: "SPATIAL AUDIO",
+        type: "HERO",
+        sortOrder: 3,
       },
     ],
   });
 
-  // 10. Initial automated support welcome messages
-  await prisma.supportMessage.create({
+  // 10. Sample Orders illustrating all multi-role lifecycle stages:
+  const firstProd = await prisma.product.findFirst({
+    include: { variants: true, images: true },
+  });
+
+  // Order 1: Assigned to Delivery Worker, currently OUT_FOR_DELIVERY with OTP 8942!
+  const liveOrder = await prisma.order.create({
     data: {
-      userId: customer1.id,
-      sessionId: "session-" + customer1.id,
-      sender: "BOT",
-      message: "👋 Welcome to NexMart 24x7 Customer Care! How can I help you today? You can check your order status, request a return, or talk to an agent.",
-      quickActions: JSON.stringify([
-        "Track My Order",
-        "Return / Refund Policy",
-        "Payment & EMI Options",
-        "Chat with Live Agent",
+      orderNumber: "BJR-2026-8942",
+      userId: customerUser.id,
+      deliveryWorkerId: deliveryProfile.id,
+      totalAmount: 16999,
+      discountAmount: 1000,
+      shippingFee: 0,
+      taxAmount: 850,
+      finalAmount: 16849,
+      status: "OUT_FOR_DELIVERY",
+      paymentStatus: "PAID",
+      paymentMethod: "UPI_QR",
+      transactionId: "UTR-9835400188-7841",
+      deliveryOtp: "8942",
+      trackingNumber: "BJR-EXP-9921448",
+      courierName: "Bajrangi Express Logistics",
+      shippingAddress: JSON.stringify({
+        fullName: "Rahul Sharma",
+        phone: "+91 99887 76655",
+        street: "Flat 402, Skyline Residency, Indiranagar 100 Feet Rd",
+        city: "Bengaluru",
+        state: "Karnataka",
+        postalCode: "560038",
+        country: "India",
+      }),
+      items: {
+        create: [
+          {
+            productId: firstProd.id,
+            productTitle: "Bajrangi Pulse ANC Studio Over-Ear Headphones",
+            variantName: "Matte Midnight Black",
+            productImage: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800",
+            price: 16999,
+            quantity: 1,
+            total: 16999,
+          },
+        ],
+      },
+      timeline: {
+        create: [
+          {
+            status: "ORDER_PLACED",
+            title: "Order Placed & Verified",
+            description: "Paid via UPI QR (UTR: UTR-9835400188-7841). Verified by Admin Receiving Center.",
+            location: "Bajrangi Payment Gateway",
+            timestamp: new Date(Date.now() - 6 * 3600 * 1000),
+          },
+          {
+            status: "PACKED",
+            title: "Packed by Seller",
+            description: "Apex Digital Retailers packed item in tamper-proof bubble seal.",
+            location: "Apex Fulfillment Hub, Koramangala",
+            timestamp: new Date(Date.now() - 4 * 3600 * 1000),
+          },
+          {
+            status: "ASSIGNED_TO_DELIVERY",
+            title: "Assigned to Delivery Partner Ramesh Kumar",
+            description: "Rider dispatched on Hero Splendor (KA-05-EX-4891).",
+            location: "Bengaluru Hub",
+            timestamp: new Date(Date.now() - 2 * 3600 * 1000),
+          },
+          {
+            status: "OUT_FOR_DELIVERY",
+            title: "Out for Doorstep Delivery",
+            description: "Agent Ramesh Kumar is en route with your package. Share Delivery OTP: 8942 upon arrival.",
+            location: "Indiranagar Circle",
+            timestamp: new Date(Date.now() - 30 * 60 * 1000),
+          },
+        ],
+      },
+    },
+  });
+
+  // Payment Transaction for Order 1
+  await prisma.paymentTransaction.create({
+    data: {
+      orderId: liveOrder.id,
+      userId: customerUser.id,
+      amount: 16849,
+      paymentMethod: "UPI_QR",
+      transactionRef: "UTR-9835400188-7841",
+      status: "APPROVED",
+      verifiedBy: adminUser.id,
+      adminNote: "Verified against Jio Payments Bank statement (Warish Raj). Approved.",
+    },
+  });
+
+  // Order 2: In PROCESSING, ready for delivery assignment
+  const pendingOrder = await prisma.order.create({
+    data: {
+      orderNumber: "BJR-2026-7731",
+      userId: customerUser.id,
+      totalAmount: 79999,
+      discountAmount: 1000,
+      shippingFee: 0,
+      taxAmount: 4000,
+      finalAmount: 82999,
+      status: "PACKED",
+      paymentStatus: "PENDING_VERIFICATION",
+      paymentMethod: "BANK_TRANSFER",
+      transactionId: "BANK-NEFT-9841029410",
+      deliveryOtp: "5512",
+      trackingNumber: "BJR-EXP-773199",
+      courierName: "Bajrangi HyperLogistics",
+      shippingAddress: JSON.stringify({
+        fullName: "Rahul Sharma",
+        phone: "+91 99887 76655",
+        street: "Tower B, 7th Floor, Prestige Tech Cloud Park, Marathahalli",
+        city: "Bengaluru",
+        state: "Karnataka",
+        postalCode: "560103",
+        country: "India",
+      }),
+      items: {
+        create: [
+          {
+            productId: firstProd.id,
+            productTitle: "Bajrangi Titanium Ultra 16 Flagship 5G",
+            variantName: "Space Titanium / 512GB",
+            productImage: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=900",
+            price: 79999,
+            quantity: 1,
+            total: 79999,
+          },
+        ],
+      },
+      timeline: {
+        create: [
+          {
+            status: "ORDER_PLACED",
+            title: "Order Placed - Bank Transfer UTR Submitted",
+            description: "Buyer submitted NEFT ref: BANK-NEFT-9841029410 to Jio Payments Bank account.",
+            location: "Bajrangi Payment Portal",
+          },
+          {
+            status: "PACKED",
+            title: "Packed & Ready for Delivery Pickup",
+            description: "Awaiting delivery worker assignment in Admin Controller.",
+            location: "Apex Warehouse Hub",
+          },
+        ],
+      },
+    },
+  });
+
+  // Pending Transaction in Admin Receiving Center
+  await prisma.paymentTransaction.create({
+    data: {
+      orderId: pendingOrder.id,
+      userId: customerUser.id,
+      amount: 82999,
+      paymentMethod: "BANK_TRANSFER",
+      transactionRef: "BANK-NEFT-9841029410",
+      status: "PENDING_VERIFICATION",
+      adminNote: "Customer submitted bank transfer to Warish Raj (000521713102565). Awaiting admin confirmation.",
+    },
+  });
+
+  // 11. Support Ticket
+  await prisma.supportTicket.create({
+    data: {
+      ticketNumber: "TCK-BJR-901",
+      userId: customerUser.id,
+      subject: "Address delivery slot preference request for order BJR-2026-8942",
+      category: "DELIVERY",
+      priority: "MEDIUM",
+      status: "OPEN",
+      messages: JSON.stringify([
+        {
+          sender: "CUSTOMER",
+          text: "Hi BajrangiStore team, please deliver my package after 3 PM as I will be in office meetings until then.",
+          timestamp: new Date(Date.now() - 2 * 3600 * 1000),
+        },
+        {
+          sender: "AGENT",
+          text: "Hello Rahul! We have alerted our assigned delivery rider Ramesh Kumar. He will coordinate delivery after 3 PM.",
+          timestamp: new Date(Date.now() - 1 * 3600 * 1000),
+        },
       ]),
     },
   });
 
-  console.log("Database seeded successfully with rich production catalog!");
+  // 12. Customer Notifications
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: customerUser.id,
+        title: "Rider is Out for Delivery! 🚀",
+        message: "Rider Ramesh Kumar is en route with order BJR-2026-8942. Please share OTP 8942 upon arrival.",
+        type: "DELIVERY",
+        link: "/account/orders/BJR-2026-8942",
+      },
+      {
+        userId: customerUser.id,
+        title: "Welcome Bonus: ₹500 in your BajrangiStore Wallet! 🎁",
+        message: "Use your wallet balance at checkout for instant 1-click deductions.",
+        type: "PROMO",
+        link: "/account",
+      },
+    ],
+  });
+
+  console.log("BajrangiStore seeded successfully with all 4 roles, real payment configs, and live orders!");
 }
 
 main()

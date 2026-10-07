@@ -14,10 +14,10 @@ export function SupportChatModal() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let sid = localStorage.getItem("nexmart_chat_session");
+    let sid = localStorage.getItem("bajrangi_chat_session") || localStorage.getItem("nexmart_chat_session");
     if (!sid) {
       sid = "session_" + Math.random().toString(36).substring(2, 9);
-      localStorage.setItem("nexmart_chat_session", sid);
+      localStorage.setItem("bajrangi_chat_session", sid);
     }
     setSessionId(sid);
   }, []);
@@ -35,7 +35,7 @@ export function SupportChatModal() {
             {
               id: "initial",
               sender: "BOT",
-              message: "👋 Hello! Welcome to NexMart 24x7 Support. How may I assist you today? You can check order tracking, ask about returns, or talk to an agent.",
+              message: "👋 Namaste! Welcome to BajrangiStore 24x7 Customer Support. How may I assist you today? You can check order tracking, delivery OTP, ask about returns, or talk to an agent.",
               quickActions: JSON.stringify([
                 "Track My Order",
                 "Return & Refund Policy",
@@ -129,7 +129,7 @@ export function SupportChatModal() {
               </div>
               <div>
                 <h3 className="text-sm font-bold flex items-center gap-1.5">
-                  NexMart Support <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  BajrangiStore Support <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 </h3>
                 <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Online & Ready
@@ -147,8 +147,8 @@ export function SupportChatModal() {
 
           {/* Quick Notice */}
           <div className="bg-slate-50 px-4 py-1.5 border-b border-slate-100 text-[10px] text-slate-500 flex items-center justify-between">
-            <span>Powered by NexMart Neural Concierge</span>
-            <span className="text-brand-600 font-semibold">Toll-Free: 1800-NEX-MART</span>
+            <span>Powered by BajrangiStore Neural Care</span>
+            <span className="text-amber-600 font-semibold">Toll-Free: 1800-BAJRANGI</span>
           </div>
 
           {/* Messages Area */}

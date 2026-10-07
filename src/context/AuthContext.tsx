@@ -2,14 +2,16 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useToast } from "./ToastContext";
+import { useRouter } from "next/navigation";
 
 export interface UserSession {
   id: string;
   name: string;
   email: string;
-  role: "CUSTOMER" | "SELLER" | "ADMIN";
+  role: "CUSTOMER" | "SELLER" | "ADMIN" | "DELIVERY_WORKER";
   avatar?: string | null;
   storeSlug?: string | null;
+  walletBalance?: number;
 }
 
 interface AuthContextType {
@@ -18,7 +20,7 @@ interface AuthContextType {
   login: (email: string, password?: string) => Promise<boolean>;
   register: (data: { name: string; email: string; password: string; role?: string; storeName?: string }) => Promise<boolean>;
   logout: () => Promise<void>;
-  switchRole: (role: "CUSTOMER" | "SELLER" | "ADMIN") => Promise<void>;
+  switchRole: (role: "CUSTOMER" | "SELLER" | "ADMIN" | "DELIVERY_WORKER") => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -28,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
+  const router = useRouter();
 
   const fetchSession = async () => {
     try {
@@ -65,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data.user);
       showToast(`Welcome back, ${data.user.name}!`, "success");
       return true;
-    } catch (err) {
+    } catch {
       showToast("Network error during login", "error");
       return false;
     } finally {
@@ -93,9 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
       setUser(data.user);
-      showToast("Account created successfully! Welcome to NexMart.", "success");
+      showToast("Account created successfully! Welcome to BajrangiStore.", "success");
       return true;
-    } catch (err) {
+    } catch {
       showToast("Network error during registration", "error");
       return false;
     } finally {
@@ -114,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const switchRole = async (targetRole: "CUSTOMER" | "SELLER" | "ADMIN") => {
+  const switchRole = async (targetRole: "CUSTOMER" | "SELLER" | "ADMIN" | "DELIVERY_WORKER") => {
     try {
       const res = await fetch("/api/auth/switch-demo", {
         method: "POST",
@@ -125,6 +128,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await res.json();
         setUser(data.user);
         showToast(`Switched active profile to: ${data.user.name} (${targetRole})`, "success");
+        if (targetRole === "ADMIN") {
+          router.push("/admin");
+        } else if (targetRole === "SELLER") {
+          router.push("/seller");
+        } else if (targetRole === "DELIVERY_WORKER") {
+          router.push("/delivery");
+        } else {
+          router.push("/account");
+        }
       }
     } catch (err) {
       console.error(err);

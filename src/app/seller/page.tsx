@@ -15,6 +15,9 @@ import {
   AlertTriangle,
   Settings,
   X,
+  ShieldCheck,
+  FileText,
+  DollarSign,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
@@ -42,8 +45,9 @@ export default function SellerDashboardPage() {
 
   // Tracking update state
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [courierName, setCourierName] = useState("BlueDart Air Express");
+  const [courierName, setCourierName] = useState("Bajrangi HyperLogistics");
   const [trackingNumber, setTrackingNumber] = useState("");
+  const [dispatchStatus, setDispatchStatus] = useState("PACKED");
   const [isUpdatingTracking, setIsUpdatingTracking] = useState(false);
 
   const fetchSellerData = async () => {
@@ -78,7 +82,7 @@ export default function SellerDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
-          brand: brand || stats?.seller?.storeName || "Merchant Brand",
+          brand: brand.trim(),
           categoryId: categoryId || categories[0]?.id,
           basePrice,
           salePrice,
@@ -89,7 +93,7 @@ export default function SellerDashboardPage() {
       });
 
       if (res.ok) {
-        showToast("Product listed successfully!", "success");
+        showToast("Product listed successfully on BajrangiStore!", "success");
         setIsAddProductOpen(false);
         setTitle("");
         setBasePrice("");
@@ -113,14 +117,14 @@ export default function SellerDashboardPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          status: "SHIPPED",
+          status: dispatchStatus,
           courierName,
-          trackingNumber: trackingNumber || `BD-${Math.floor(1000000 + Math.random() * 9000000)}`,
+          trackingNumber: trackingNumber || `BJR-EXP-${Math.floor(1000000 + Math.random() * 9000000)}`,
         }),
       });
 
       if (res.ok) {
-        showToast(`Order #${selectedOrder.orderNumber} dispatched!`, "success");
+        showToast(`Order #${selectedOrder.orderNumber} marked as ${dispatchStatus}!`, "success");
         setSelectedOrder(null);
         fetchSellerData();
       }
@@ -135,7 +139,7 @@ export default function SellerDashboardPage() {
     return (
       <div className="py-20 flex flex-col items-center justify-center space-y-3">
         <div className="w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs text-slate-500">Loading Seller Central...</span>
+        <span className="text-xs text-slate-500">Loading BajrangiStore Sell Center...</span>
       </div>
     );
   }
@@ -152,14 +156,14 @@ export default function SellerDashboardPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <Store className="w-6 h-6 text-amber-600" /> {seller?.storeName || "Seller Central"}
+              <Store className="w-6 h-6 text-amber-600" /> {seller?.storeName || "BajrangiStore Sell Center"}
             </h1>
-            <span className="bg-amber-100 text-amber-800 font-extrabold text-[10px] uppercase px-2 py-0.5 rounded-full">
-              MERCHANT PORTAL
+            <span className="bg-emerald-100 text-emerald-800 font-extrabold text-[10px] uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-emerald-600" /> VERIFIED MERCHANT (GSTIN ACTIVE)
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage your store catalog, dispatch pending shipments, and analyze sales performance
+            Manage your store catalog, pack orders for Bajrangi courier pickup, and view settlement payouts
           </p>
         </div>
 
@@ -177,9 +181,9 @@ export default function SellerDashboardPage() {
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {[
           { key: "OVERVIEW", label: "Overview & Sales", icon: TrendingUp },
-          { key: "PRODUCTS", label: "My Products", icon: Package },
+          { key: "PRODUCTS", label: "My Catalog & Stock", icon: Package },
           { key: "ORDERS", label: "Orders Fulfillment", icon: ShoppingCart },
-          { key: "SETTINGS", label: "Store Settings", icon: Settings },
+          { key: "SETTINGS", label: "Store KYC & Profile", icon: Settings },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -222,7 +226,7 @@ export default function SellerDashboardPage() {
               <div className="text-2xl font-black text-slate-900">
                 {metrics.totalOrders || 0}
               </div>
-              <span className="text-[10px] text-brand-600 font-bold mt-1 block">
+              <span className="text-[10px] text-amber-600 font-bold mt-1 block">
                 Assigned for dispatch
               </span>
             </div>
@@ -263,7 +267,7 @@ export default function SellerDashboardPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
                       {o.status}
                     </span>
                     <div className="text-slate-400 text-[10px] mt-0.5">
@@ -299,7 +303,7 @@ export default function SellerDashboardPage() {
                   <img
                     src={p.images?.[0]?.url || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100"}
                     alt=""
-                    className="w-12 h-12 rounded-xl object-cover bg-slate-50 border shrink-0"
+                    className="w-12 h-12 rounded-xl object-cover border bg-slate-50 shrink-0"
                   />
                   <div>
                     <div className="font-bold text-slate-900">{p.title}</div>
@@ -339,7 +343,7 @@ export default function SellerDashboardPage() {
                     Buyer: {ord.user?.name} ({ord.user?.email}) • Items: {ord.items.length}
                   </div>
                   <div className="text-[10px] text-slate-400">
-                    Status: <span className="font-bold text-slate-700">{ord.status}</span> • Courier: {ord.courierName || "Not assigned"}
+                    Status: <span className="font-bold text-slate-700">{ord.status}</span> • Courier: {ord.courierName || "Bajrangi HyperLogistics"}
                   </div>
                 </div>
 
@@ -347,11 +351,11 @@ export default function SellerDashboardPage() {
                   <button
                     onClick={() => {
                       setSelectedOrder(ord);
-                      setTrackingNumber(`BD-${Math.floor(1000000 + Math.random() * 9000000)}`);
+                      setTrackingNumber(`BJR-EXP-${Math.floor(1000000 + Math.random() * 9000000)}`);
                     }}
-                    className="bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-xs flex items-center gap-1.5"
+                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-xs flex items-center gap-1.5"
                   >
-                    <Truck className="w-3.5 h-3.5" /> Dispatch / Ship
+                    <Truck className="w-3.5 h-3.5" /> Pack & Dispatch
                   </button>
 
                   <Link
@@ -381,7 +385,7 @@ export default function SellerDashboardPage() {
               <input
                 type="text"
                 disabled
-                value={seller?.storeName || ""}
+                value={seller?.storeName || "TechNova Official Store"}
                 className="w-full px-3 py-2 border rounded-xl bg-slate-50"
               />
             </div>
@@ -390,7 +394,7 @@ export default function SellerDashboardPage() {
               <input
                 type="text"
                 disabled
-                value={`/sellers/${seller?.storeSlug || ""}`}
+                value={`/sellers/${seller?.storeSlug || "technova"}`}
                 className="w-full px-3 py-2 border rounded-xl bg-slate-50 font-mono text-[11px]"
               />
             </div>
@@ -399,7 +403,16 @@ export default function SellerDashboardPage() {
               <input
                 type="text"
                 disabled
-                value={seller?.gstNumber || "29AAAAA0000A1Z5"}
+                value={seller?.gstNumber || "29AABCU9603R1ZM"}
+                className="w-full px-3 py-2 border rounded-xl bg-slate-50 font-mono"
+              />
+            </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">PAN Number</label>
+              <input
+                type="text"
+                disabled
+                value={seller?.panNumber || "AAACU9603R"}
                 className="w-full px-3 py-2 border rounded-xl bg-slate-50 font-mono"
               />
             </div>
@@ -407,12 +420,12 @@ export default function SellerDashboardPage() {
               <label className="font-bold text-slate-700 block mb-1">Store Bio & Description</label>
               <textarea
                 rows={3}
-                defaultValue={seller?.description || ""}
+                defaultValue={seller?.description || "Official seller of authentic electronics & smart gadgets on BajrangiStore."}
                 className="w-full px-3 py-2 border rounded-xl resize-none"
               />
             </div>
             <button
-              onClick={() => showToast("Store settings saved successfully!", "success")}
+              onClick={() => showToast("Store profile saved successfully!", "success")}
               className="bg-amber-600 text-white font-bold px-5 py-2 rounded-xl"
             >
               Save Store Profile
@@ -447,10 +460,13 @@ export default function SellerDashboardPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold block mb-1">Brand</label>
+                  <label className="font-bold block mb-1">
+                    Actual Brand <span className="text-[10px] text-amber-600 font-normal">(e.g. Samsung, Apple, Nike)</span>
+                  </label>
                   <input
                     type="text"
-                    placeholder="Brand name"
+                    required
+                    placeholder="Enter actual brand name"
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
                     className="w-full px-3 py-2 border rounded-xl"
@@ -474,7 +490,7 @@ export default function SellerDashboardPage() {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="font-bold block mb-1">Base Price (₹)</label>
+                  <label className="font-bold block mb-1">MRP Price (₹)</label>
                   <input
                     type="number"
                     required
@@ -554,7 +570,7 @@ export default function SellerDashboardPage() {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b">
               <h3 className="font-bold text-base text-slate-900">
-                Dispatch Order #{selectedOrder.orderNumber}
+                Fulfill Order #{selectedOrder.orderNumber}
               </h3>
               <button onClick={() => setSelectedOrder(null)}>
                 <X className="w-5 h-5 text-slate-400" />
@@ -563,16 +579,28 @@ export default function SellerDashboardPage() {
 
             <form onSubmit={handleDispatchOrder} className="space-y-3 text-xs">
               <div>
+                <label className="font-bold block mb-1">Fulfillment Status</label>
+                <select
+                  value={dispatchStatus}
+                  onChange={(e) => setDispatchStatus(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-xl bg-slate-50 font-bold"
+                >
+                  <option value="PACKED">PACKED (Ready for Courier Pickup)</option>
+                  <option value="READY_FOR_PICKUP">READY FOR PICKUP</option>
+                  <option value="SHIPPED">DISPATCHED (In Transit)</option>
+                </select>
+              </div>
+
+              <div>
                 <label className="font-bold block mb-1">Courier Partner</label>
                 <select
                   value={courierName}
                   onChange={(e) => setCourierName(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-xl"
+                  className="w-full px-3 py-2 border rounded-xl bg-slate-50"
                 >
+                  <option value="Bajrangi HyperLogistics">Bajrangi HyperLogistics (Doorstep OTP Fleet)</option>
                   <option value="BlueDart Air Express">BlueDart Air Express</option>
                   <option value="Delhivery Express">Delhivery Express</option>
-                  <option value="DTDC Priority">DTDC Priority</option>
-                  <option value="NexMart HyperLogistics">NexMart HyperLogistics</option>
                 </select>
               </div>
 
@@ -583,7 +611,7 @@ export default function SellerDashboardPage() {
                   required
                   value={trackingNumber}
                   onChange={(e) => setTrackingNumber(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-xl font-mono"
+                  className="w-full px-3 py-2 border rounded-xl font-mono bg-white"
                 />
               </div>
 
@@ -598,9 +626,9 @@ export default function SellerDashboardPage() {
                 <button
                   type="submit"
                   disabled={isUpdatingTracking}
-                  className="px-5 py-2 rounded-xl bg-brand-600 text-white font-bold"
+                  className="px-5 py-2 rounded-xl bg-amber-600 text-white font-bold"
                 >
-                  {isUpdatingTracking ? "Saving..." : "Confirm Shipment"}
+                  {isUpdatingTracking ? "Saving..." : "Confirm Status Update"}
                 </button>
               </div>
             </form>

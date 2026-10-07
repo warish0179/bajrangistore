@@ -369,7 +369,7 @@ export default function ProductDetailPage({
               <div className="text-rose-600 font-extrabold text-sm">Temporarily Out of Stock</div>
             )}
             <div className="text-[11px] text-slate-500 mt-0.5">
-              Fulfilled by <span className="font-semibold text-slate-800">NexMart Express</span>
+              Fulfilled by <span className="font-semibold text-slate-800">BajrangiStore Express</span>
             </div>
           </div>
 

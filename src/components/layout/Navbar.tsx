@@ -19,8 +19,10 @@ import {
   LayoutDashboard,
   LogOut,
   Flame,
-  Clock,
   CheckCircle,
+  Truck,
+  Wallet,
+  Home,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
@@ -94,52 +96,73 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full shadow-md bg-white">
-      {/* Top Banner Bar */}
+      {/* Top Banner Bar with Multi-Role Demo Switcher */}
       <div className="bg-slate-950 text-slate-300 text-xs py-1.5 px-4 hidden md:flex items-center justify-between border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
+          <span className="flex items-center gap-1.5 text-amber-400 font-bold">
             <Flame className="w-3.5 h-3.5 fill-amber-400" />
-            MEGA FEST LIVE:
+            BAJRANGI DHAMAKA SALE:
           </span>
-          <span>Up to 70% Off on Electronics & Fashion | Free Express Delivery with code</span>
-          <span className="bg-amber-400/20 text-amber-300 font-mono px-1.5 py-0.5 rounded text-[11px] font-bold">
+          <span>Up to 70% Off + Free Hyper-Express Delivery with code</span>
+          <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono px-1.5 py-0.5 rounded text-[11px] font-bold">
             FREESHIP
           </span>
         </div>
 
-        {/* Demo Switcher Quick Bar */}
+        {/* 4 Roles Switcher Quick Bar + Visitor Mode */}
         <div className="flex items-center gap-2">
-          <span className="text-slate-400 text-[11px]">Test Role:</span>
-          <div className="inline-flex rounded-md p-0.5 bg-slate-900 border border-slate-800">
+          <span className="text-slate-400 text-[11px] font-medium">Active Mode:</span>
+          <div className="inline-flex rounded-lg p-0.5 bg-slate-900 border border-slate-800 gap-0.5">
             <button
-              onClick={() => switchRole("CUSTOMER")}
-              className={`px-2 py-0.5 text-[11px] rounded transition-all font-medium ${
-                user?.role === "CUSTOMER"
-                  ? "bg-brand-600 text-white shadow-sm"
+              onClick={() => logout()}
+              className={`px-2 py-0.5 text-[11px] rounded transition-all font-semibold flex items-center gap-1 ${
+                !user
+                  ? "bg-rose-600 text-white shadow-sm"
                   : "text-slate-400 hover:text-slate-200"
               }`}
+              title="View store as new unauthenticated visitor"
             >
-              Customer
+              <LogOut className="w-3 h-3" /> Visitor (Logged Out)
             </button>
             <button
-              onClick={() => switchRole("SELLER")}
-              className={`px-2 py-0.5 text-[11px] rounded transition-all font-medium ${
-                user?.role === "SELLER"
+              onClick={() => switchRole("CUSTOMER")}
+              className={`px-2.5 py-0.5 text-[11px] rounded transition-all font-semibold flex items-center gap-1 ${
+                user?.role === "CUSTOMER"
                   ? "bg-amber-600 text-white shadow-sm"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              Seller
+              <User className="w-3 h-3" /> Customer
+            </button>
+            <button
+              onClick={() => switchRole("SELLER")}
+              className={`px-2.5 py-0.5 text-[11px] rounded transition-all font-semibold flex items-center gap-1 ${
+                user?.role === "SELLER"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Store className="w-3 h-3" /> Seller
+            </button>
+            <button
+              onClick={() => switchRole("DELIVERY_WORKER")}
+              className={`px-2.5 py-0.5 text-[11px] rounded transition-all font-semibold flex items-center gap-1 ${
+                user?.role === "DELIVERY_WORKER"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Truck className="w-3 h-3" /> Delivery
             </button>
             <button
               onClick={() => switchRole("ADMIN")}
-              className={`px-2 py-0.5 text-[11px] rounded transition-all font-medium ${
+              className={`px-2.5 py-0.5 text-[11px] rounded transition-all font-semibold flex items-center gap-1 ${
                 user?.role === "ADMIN"
                   ? "bg-purple-600 text-white shadow-sm"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              Admin
+              <ShieldCheck className="w-3 h-3" /> Admin
             </button>
           </div>
         </div>
@@ -158,17 +181,27 @@ export function Navbar() {
             </button>
 
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-brand-500/30 group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-600 to-amber-400 flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:scale-105 transition-transform">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-brand-300 bg-clip-text text-transparent">
-                  NexMart
+                <span className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-amber-400 via-orange-200 to-white bg-clip-text text-transparent">
+                  BajrangiStore
                 </span>
-                <span className="text-[9px] tracking-wider uppercase text-brand-300 -mt-1 font-semibold">
-                  Hyper-Store
+                <span className="text-[9px] tracking-wider uppercase text-amber-400 -mt-1 font-semibold">
+                  Mega Marketplace
                 </span>
               </div>
+            </Link>
+
+            {/* Explicit Home Button */}
+            <Link
+              href="/"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-amber-400 hover:text-white transition-colors border border-slate-700/80 shadow-xs shrink-0"
+              title="Return to Home Store"
+            >
+              <Home className="w-4 h-4 text-amber-400" />
+              <span>Home</span>
             </Link>
           </div>
 
@@ -177,7 +210,7 @@ export function Navbar() {
             onClick={() => setIsLocationModalOpen(true)}
             className="hidden lg:flex items-center gap-2 text-xs text-left px-2 py-1.5 rounded-lg hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700"
           >
-            <MapPin className="w-4 h-4 text-brand-400 shrink-0" />
+            <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
             <div>
               <div className="text-[10px] text-slate-400 font-medium">Deliver to</div>
               <div className="font-semibold text-white truncate max-w-[130px]">{cityArea}</div>
@@ -195,17 +228,21 @@ export function Navbar() {
               className="bg-slate-100 text-slate-700 text-xs px-2.5 py-2.5 border-r border-slate-300 focus:outline-none cursor-pointer hidden sm:block font-medium hover:bg-slate-200 transition-colors"
             >
               <option value="all">All Categories</option>
-              <option value="electronics">Electronics</option>
-              <option value="fashion">Fashion</option>
-              <option value="home-living">Home & Living</option>
-              <option value="beauty-grooming">Beauty</option>
-              <option value="audio-sound">Audio</option>
-              <option value="sports-fitness">Sports</option>
+              <option value="mobiles-tablets">Mobiles & Tablets</option>
+              <option value="electronics-audio">Electronics & Audio</option>
+              <option value="laptops-computers">Laptops & Computers</option>
+              <option value="fashion-apparel">Fashion & Clothing</option>
+              <option value="footwear">Footwear & Shoes</option>
+              <option value="home-kitchen">Home & Appliances</option>
+              <option value="beauty-grooming">Beauty & Personal Care</option>
+              <option value="grocery-gourmet">Grocery & Gourmet</option>
+              <option value="sports-fitness">Sports & Fitness</option>
+              <option value="toys-kids">Toys & Kids</option>
             </select>
 
             <input
               type="text"
-              placeholder="Search for 4K laptops, flagship phones, sneakers, watches..."
+              placeholder="Search for smartphones, laptops, clothing, shoes, grocery..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full text-slate-800 text-sm px-3.5 py-2.5 focus:outline-none placeholder:text-slate-400"
@@ -213,14 +250,27 @@ export function Navbar() {
 
             <button
               type="submit"
-              className="bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white px-5 py-2.5 flex items-center justify-center transition-all duration-200 shrink-0"
+              className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-5 py-2.5 flex items-center justify-center transition-all duration-200 shrink-0"
             >
               <Search className="w-4 h-4" />
             </button>
           </form>
 
           {/* Right Action Icons */}
-          <div className="flex items-center gap-3 sm:gap-5 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+            {/* Wallet Balance Display (for Customer) */}
+            {user && (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 border border-slate-700 rounded-xl text-xs">
+                <Wallet className="w-3.5 h-3.5 text-amber-400" />
+                <div>
+                  <span className="text-[10px] text-slate-400 block leading-none">Wallet</span>
+                  <span className="font-bold text-amber-300 leading-none">
+                    ₹{(user.walletBalance ?? 2500).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Notifications Dropdown */}
             {user && (
               <div className="relative" ref={notifRef}>
@@ -241,7 +291,7 @@ export function Navbar() {
                   <div className="absolute right-0 mt-2 w-80 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
                     <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
                       <span className="font-semibold text-sm">Notifications</span>
-                      <span className="text-xs text-brand-600 font-medium">All caught up</span>
+                      <span className="text-xs text-amber-600 font-medium">All caught up</span>
                     </div>
                     <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
                       {notifications.length === 0 ? (
@@ -285,9 +335,9 @@ export function Navbar() {
               className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700/90 text-white px-3 py-2 rounded-xl border border-slate-700 transition-colors group"
             >
               <div className="relative">
-                <ShoppingCart className="w-5 h-5 text-brand-400 group-hover:scale-110 transition-transform" />
+                <ShoppingCart className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
                 {totalCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-brand-500 text-white font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center shadow-md">
+                  <span className="absolute -top-2 -right-2 bg-amber-500 text-white font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center shadow-md">
                     {totalCount}
                   </span>
                 )}
@@ -308,7 +358,7 @@ export function Navbar() {
                   <img
                     src={user.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80"}
                     alt={user.name}
-                    className="w-8 h-8 rounded-lg object-cover ring-2 ring-brand-500/40"
+                    className="w-8 h-8 rounded-lg object-cover ring-2 ring-amber-500/50"
                   />
                   <div className="hidden xl:flex flex-col text-left">
                     <span className="text-[10px] text-slate-400">Hi, {user.name.split(" ")[0]}</span>
@@ -320,10 +370,10 @@ export function Navbar() {
               ) : (
                 <Link
                   href="/auth/login"
-                  className="flex items-center gap-1.5 text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white px-3.5 py-2 rounded-xl transition-all shadow-md shadow-brand-500/20"
+                  className="flex items-center gap-1.5 text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-xl transition-all shadow-md shadow-amber-600/30"
                 >
                   <User className="w-4 h-4" />
-                  Sign In
+                  Login / Sign Up
                 </Link>
               )}
 
@@ -333,9 +383,14 @@ export function Navbar() {
                   <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/80 rounded-t-2xl">
                     <p className="text-xs text-slate-500 font-medium">Logged in as</p>
                     <p className="font-bold text-sm text-slate-900 truncate">{user.name}</p>
-                    <span className="inline-block mt-1 px-2 py-0.5 bg-brand-100 text-brand-700 font-semibold text-[10px] rounded-full">
-                      {user.role} ACCOUNT
-                    </span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-semibold text-[10px] rounded-full">
+                        {user.role} ACCOUNT
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        Wallet: ₹{(user.walletBalance ?? 2500).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="py-1">
@@ -344,14 +399,14 @@ export function Navbar() {
                       onClick={() => setIsAccountOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
                     >
-                      <User className="w-4 h-4 text-slate-400" /> My Profile
+                      <User className="w-4 h-4 text-slate-400" /> My Profile & Wallet
                     </Link>
                     <Link
                       href="/account/orders"
                       onClick={() => setIsAccountOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
                     >
-                      <ShieldCheck className="w-4 h-4 text-slate-400" /> My Orders & Returns
+                      <ShieldCheck className="w-4 h-4 text-slate-400" /> My Orders & Tracking
                     </Link>
                     <Link
                       href="/account/wishlist"
@@ -361,6 +416,17 @@ export function Navbar() {
                       <Heart className="w-4 h-4 text-slate-400" /> My Wishlist
                     </Link>
 
+                    {/* Delivery Partner Link */}
+                    {(user.role === "DELIVERY_WORKER" || user.role === "ADMIN") && (
+                      <Link
+                        href="/delivery"
+                        onClick={() => setIsAccountOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50/70 hover:bg-emerald-100/70"
+                      >
+                        <Truck className="w-4 h-4 text-emerald-600" /> Delivery Rider App
+                      </Link>
+                    )}
+
                     {/* Seller Link */}
                     {(user.role === "SELLER" || user.role === "ADMIN") && (
                       <Link
@@ -368,7 +434,7 @@ export function Navbar() {
                         onClick={() => setIsAccountOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-amber-700 bg-amber-50/60 hover:bg-amber-100/60"
                       >
-                        <Store className="w-4 h-4 text-amber-600" /> Seller Dashboard
+                        <Store className="w-4 h-4 text-amber-600" /> Seller Center Dashboard
                       </Link>
                     )}
 
@@ -379,7 +445,7 @@ export function Navbar() {
                         onClick={() => setIsAccountOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-purple-700 bg-purple-50/60 hover:bg-purple-100/60"
                       >
-                        <LayoutDashboard className="w-4 h-4 text-purple-600" /> Admin Console
+                        <LayoutDashboard className="w-4 h-4 text-purple-600" /> Admin Controller
                       </Link>
                     )}
                   </div>
@@ -404,57 +470,102 @@ export function Navbar() {
 
       {/* Secondary Navigation Strip */}
       <nav className="bg-slate-800 text-slate-200 border-t border-slate-700/60 px-4 md:px-8 py-2 text-xs overflow-x-auto scrollbar-none hidden md:block">
-        <div className="max-w-7xl mx-auto flex items-center gap-6">
+        <div className="max-w-7xl mx-auto flex items-center gap-4 lg:gap-5">
+          {/* Home Button */}
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 font-bold text-amber-400 hover:text-white bg-slate-900/90 px-3 py-1 rounded-lg border border-amber-500/40 shadow-xs shrink-0 transition-colors"
+          >
+            <Home className="w-3.5 h-3.5 text-amber-400" /> Home
+          </Link>
+
           <Link
             href="/products"
-            className="flex items-center gap-1 font-bold text-white hover:text-brand-300 transition-colors shrink-0"
+            className="flex items-center gap-1 font-semibold text-white hover:text-amber-400 transition-colors shrink-0"
           >
             <Menu className="w-4 h-4" /> All Categories
+          </Link>
+
+          <Link
+            href="/category/mobiles-tablets"
+            className="hover:text-amber-400 text-slate-300 transition-colors shrink-0 font-medium"
+          >
+            Mobiles & Tablets
+          </Link>
+          <Link
+            href="/category/electronics-audio"
+            className="hover:text-amber-400 text-slate-300 transition-colors shrink-0 font-medium"
+          >
+            Electronics & Audio
+          </Link>
+          <Link
+            href="/category/laptops-computers"
+            className="hover:text-amber-400 text-slate-300 transition-colors shrink-0 font-medium"
+          >
+            Laptops & Computers
+          </Link>
+          <Link
+            href="/category/fashion-apparel"
+            className="hover:text-amber-400 text-slate-300 transition-colors shrink-0 font-medium"
+          >
+            Fashion & Apparel
+          </Link>
+          <Link
+            href="/category/footwear"
+            className="hover:text-amber-400 text-slate-300 transition-colors shrink-0 font-medium"
+          >
+            Footwear & Shoes
+          </Link>
+          <Link
+            href="/category/home-kitchen"
+            className="hover:text-amber-400 text-slate-300 transition-colors shrink-0 font-medium"
+          >
+            Home & Kitchen
+          </Link>
+          <Link
+            href="/category/beauty-grooming"
+            className="hover:text-amber-400 text-slate-300 transition-colors shrink-0 font-medium"
+          >
+            Beauty & Care
+          </Link>
+          <Link
+            href="/category/grocery-gourmet"
+            className="hover:text-amber-400 text-slate-300 transition-colors shrink-0 font-medium"
+          >
+            Grocery & Gourmet
+          </Link>
+          <Link
+            href="/category/sports-fitness"
+            className="hover:text-amber-400 text-slate-300 transition-colors shrink-0 font-medium"
+          >
+            Sports & Fitness
+          </Link>
+          <Link
+            href="/category/toys-kids"
+            className="hover:text-amber-400 text-slate-300 transition-colors shrink-0 font-medium"
+          >
+            Toys & Kids
           </Link>
           <Link
             href="/products?isDeal=true"
             className="flex items-center gap-1 text-amber-400 font-semibold hover:text-amber-300 transition-colors shrink-0"
           >
-            <Flame className="w-3.5 h-3.5" /> Flash Deals
+            <Flame className="w-3.5 h-3.5 text-amber-400" /> Flash Deals
           </Link>
           <Link
-            href="/category/electronics"
-            className="hover:text-white transition-colors shrink-0 font-medium"
+            href="/delivery"
+            className="hover:text-emerald-300 text-emerald-400 font-medium transition-colors shrink-0 flex items-center gap-1"
           >
-            Electronics & Gadgets
+            <Truck className="w-3.5 h-3.5" /> Delivery
           </Link>
           <Link
-            href="/category/fashion"
-            className="hover:text-white transition-colors shrink-0 font-medium"
+            href="/seller"
+            className="hover:text-amber-300 text-amber-400 font-medium transition-colors shrink-0 flex items-center gap-1"
           >
-            Fashion & Apparel
-          </Link>
-          <Link
-            href="/category/home-living"
-            className="hover:text-white transition-colors shrink-0 font-medium"
-          >
-            Home & Kitchen
-          </Link>
-          <Link
-            href="/category/audio-sound"
-            className="hover:text-white transition-colors shrink-0 font-medium"
-          >
-            Audio & Acoustics
-          </Link>
-          <Link
-            href="/category/sports-fitness"
-            className="hover:text-white transition-colors shrink-0 font-medium"
-          >
-            Sports & Fitness
-          </Link>
-          <Link
-            href="/category/beauty-grooming"
-            className="hover:text-white transition-colors shrink-0 font-medium"
-          >
-            Beauty & Skincare
+            <Store className="w-3.5 h-3.5" /> Seller Hub
           </Link>
 
-          <div className="ml-auto flex items-center gap-4 text-slate-300 text-xs shrink-0">
+          <div className="ml-auto hidden xl:flex items-center gap-2 text-slate-300 text-xs shrink-0">
             <span className="flex items-center gap-1">
               <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> 100% Certified Genuine
             </span>
@@ -468,8 +579,8 @@ export function Navbar() {
           <div className="w-4/5 max-w-sm bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
             <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-brand-400" />
-                <span className="font-bold text-lg">NexMart Menu</span>
+                <Sparkles className="w-5 h-5 text-amber-400" />
+                <span className="font-bold text-lg">BajrangiStore</span>
               </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -480,116 +591,176 @@ export function Navbar() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4 text-sm">
-              {/* Role Switcher in Mobile Drawer */}
+              {/* 4 Roles Switcher in Mobile Drawer */}
               <div className="bg-slate-100 p-3 rounded-xl">
-                <div className="text-xs font-semibold text-slate-500 mb-2">Instant Demo Switcher:</div>
-                <div className="grid grid-cols-3 gap-1">
+                <div className="text-xs font-semibold text-slate-500 mb-2">Switch Active Persona:</div>
+                <div className="grid grid-cols-2 gap-1.5">
                   <button
                     onClick={() => {
                       switchRole("CUSTOMER");
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`py-1 text-xs rounded font-medium ${
-                      user?.role === "CUSTOMER" ? "bg-brand-600 text-white" : "bg-white text-slate-700"
+                    className={`py-1.5 px-2 text-xs rounded-lg font-semibold flex items-center justify-center gap-1 ${
+                      user?.role === "CUSTOMER" ? "bg-amber-600 text-white" : "bg-white text-slate-700"
                     }`}
                   >
-                    Customer
+                    <User className="w-3 h-3" /> Customer
                   </button>
                   <button
                     onClick={() => {
                       switchRole("SELLER");
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`py-1 text-xs rounded font-medium ${
-                      user?.role === "SELLER" ? "bg-amber-600 text-white" : "bg-white text-slate-700"
+                    className={`py-1.5 px-2 text-xs rounded-lg font-semibold flex items-center justify-center gap-1 ${
+                      user?.role === "SELLER" ? "bg-blue-600 text-white" : "bg-white text-slate-700"
                     }`}
                   >
-                    Seller
+                    <Store className="w-3 h-3" /> Seller
+                  </button>
+                  <button
+                    onClick={() => {
+                      switchRole("DELIVERY_WORKER");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`py-1.5 px-2 text-xs rounded-lg font-semibold flex items-center justify-center gap-1 ${
+                      user?.role === "DELIVERY_WORKER" ? "bg-emerald-600 text-white" : "bg-white text-slate-700"
+                    }`}
+                  >
+                    <Truck className="w-3 h-3" /> Delivery
                   </button>
                   <button
                     onClick={() => {
                       switchRole("ADMIN");
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`py-1 text-xs rounded font-medium ${
+                    className={`py-1.5 px-2 text-xs rounded-lg font-semibold flex items-center justify-center gap-1 ${
                       user?.role === "ADMIN" ? "bg-purple-600 text-white" : "bg-white text-slate-700"
                     }`}
                   >
-                    Admin
+                    <ShieldCheck className="w-3 h-3" /> Admin
                   </button>
                 </div>
               </div>
 
               <div className="space-y-1 font-medium text-slate-700">
                 <Link
-                  href="/products?isDeal=true"
+                  href="/"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-2 p-2 rounded-lg text-amber-600 font-bold bg-amber-50"
+                  className="flex items-center gap-2 p-2 rounded-lg font-bold text-slate-900 hover:bg-slate-100"
                 >
-                  <Flame className="w-4 h-4 text-amber-500" /> Flash Deals & Offers
+                  <Home className="w-4 h-4 text-amber-500" /> Home Store
                 </Link>
                 <Link
                   href="/products"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block p-2 rounded-lg hover:bg-slate-100"
+                  className="flex items-center gap-2 p-2 rounded-lg font-semibold hover:bg-slate-100"
                 >
-                  All Products
+                  <Menu className="w-4 h-4 text-slate-500" /> All Categories (1,600+ Products)
                 </Link>
                 <Link
-                  href="/category/electronics"
+                  href="/products?isDeal=true"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block p-2 rounded-lg hover:bg-slate-100"
+                  className="flex items-center gap-2 p-2 rounded-lg text-amber-700 font-bold bg-amber-50"
                 >
-                  Electronics & Gadgets
+                  <Flame className="w-4 h-4 text-amber-500" /> Flash Deals & Offers
                 </Link>
                 <Link
-                  href="/category/fashion"
+                  href="/category/mobiles-tablets"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block p-2 rounded-lg hover:bg-slate-100"
+                  className="block p-2 rounded-lg hover:bg-slate-100 text-xs"
                 >
-                  Fashion & Apparel
+                  📱 Mobiles & Tablets
                 </Link>
                 <Link
-                  href="/category/home-living"
+                  href="/category/electronics-audio"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block p-2 rounded-lg hover:bg-slate-100"
+                  className="block p-2 rounded-lg hover:bg-slate-100 text-xs"
                 >
-                  Home & Living
+                  🎧 Electronics & Audio
                 </Link>
                 <Link
-                  href="/category/audio-sound"
+                  href="/category/laptops-computers"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block p-2 rounded-lg hover:bg-slate-100"
+                  className="block p-2 rounded-lg hover:bg-slate-100 text-xs"
                 >
-                  Audio & Acoustics
+                  💻 Laptops & Computers
                 </Link>
                 <Link
-                  href="/category/sports-fitness"
+                  href="/category/fashion-apparel"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block p-2 rounded-lg hover:bg-slate-100"
+                  className="block p-2 rounded-lg hover:bg-slate-100 text-xs"
                 >
-                  Sports & Fitness
+                  👕 Fashion & Apparel
+                </Link>
+                <Link
+                  href="/category/footwear"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block p-2 rounded-lg hover:bg-slate-100 text-xs"
+                >
+                  👟 Footwear & Shoes
+                </Link>
+                <Link
+                  href="/category/home-kitchen"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block p-2 rounded-lg hover:bg-slate-100 text-xs"
+                >
+                  🏠 Home & Kitchen
                 </Link>
                 <Link
                   href="/category/beauty-grooming"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block p-2 rounded-lg hover:bg-slate-100"
+                  className="block p-2 rounded-lg hover:bg-slate-100 text-xs"
                 >
-                  Beauty & Skincare
+                  ✨ Beauty & Personal Care
+                </Link>
+                <Link
+                  href="/category/grocery-gourmet"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block p-2 rounded-lg hover:bg-slate-100 text-xs"
+                >
+                  🥗 Grocery & Gourmet
+                </Link>
+                <Link
+                  href="/category/sports-fitness"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block p-2 rounded-lg hover:bg-slate-100 text-xs"
+                >
+                  🏃 Sports & Fitness
+                </Link>
+                <Link
+                  href="/category/toys-kids"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block p-2 rounded-lg hover:bg-slate-100 text-xs"
+                >
+                  🧸 Toys & Kids
+                </Link>
+                <Link
+                  href="/delivery"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-2 p-2 rounded-lg text-emerald-700 font-semibold bg-emerald-50"
+                >
+                  <Truck className="w-4 h-4 text-emerald-600" /> Delivery Rider Portal
+                </Link>
+                <Link
+                  href="/seller"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-2 p-2 rounded-lg text-blue-700 font-semibold bg-blue-50"
+                >
+                  <Store className="w-4 h-4 text-blue-600" /> Seller Center Hub
                 </Link>
               </div>
 
               {user && (
                 <div className="border-t border-slate-200 pt-3 space-y-1">
                   <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    My Account
+                    My Account ({user.role})
                   </div>
                   <Link
                     href="/account/orders"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block p-2 rounded-lg hover:bg-slate-100 text-slate-700"
                   >
-                    My Orders
+                    My Orders & Tracking
                   </Link>
                   <Link
                     href="/account/wishlist"
@@ -598,22 +769,13 @@ export function Navbar() {
                   >
                     My Wishlist
                   </Link>
-                  {(user.role === "SELLER" || user.role === "ADMIN") && (
-                    <Link
-                      href="/seller"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="block p-2 rounded-lg text-amber-600 font-semibold"
-                    >
-                      Seller Dashboard
-                    </Link>
-                  )}
                   {user.role === "ADMIN" && (
                     <Link
                       href="/admin"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="block p-2 rounded-lg text-purple-600 font-semibold"
                     >
-                      Admin Dashboard
+                      Admin Console
                     </Link>
                   )}
                 </div>
@@ -635,7 +797,7 @@ export function Navbar() {
                 <Link
                   href="/auth/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block w-full py-2.5 text-center text-sm font-semibold text-white bg-brand-600 rounded-xl"
+                  className="block w-full py-2.5 text-center text-sm font-semibold text-white bg-amber-600 rounded-xl"
                 >
                   Sign In / Register
                 </Link>
@@ -652,7 +814,7 @@ export function Navbar() {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-brand-600" /> Choose Delivery Location
+                <MapPin className="w-5 h-5 text-amber-600" /> Choose Delivery Location
               </h3>
               <button
                 onClick={() => setIsLocationModalOpen(false)}
@@ -673,7 +835,7 @@ export function Navbar() {
                 value={pincode}
                 onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))}
                 placeholder="e.g. 560038"
-                className="flex-1 px-4 py-2 border rounded-xl font-mono text-sm focus:outline-brand-600"
+                className="flex-1 px-4 py-2 border rounded-xl font-mono text-sm focus:outline-amber-600"
               />
               <button
                 onClick={() => {
@@ -682,7 +844,7 @@ export function Navbar() {
                     setIsLocationModalOpen(false);
                   }
                 }}
-                className="bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs px-4 py-2 rounded-xl"
+                className="bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs px-4 py-2 rounded-xl"
               >
                 Apply
               </button>
@@ -697,7 +859,7 @@ export function Navbar() {
                     setCityArea("Bengaluru, 560038");
                     setIsLocationModalOpen(false);
                   }}
-                  className="p-2 border rounded-lg hover:border-brand-500 text-left font-medium text-slate-700"
+                  className="p-2 border rounded-lg hover:border-amber-500 text-left font-medium text-slate-700"
                 >
                   Bengaluru (Indiranagar)
                 </button>
@@ -707,7 +869,7 @@ export function Navbar() {
                     setCityArea("New Delhi, 110001");
                     setIsLocationModalOpen(false);
                   }}
-                  className="p-2 border rounded-lg hover:border-brand-500 text-left font-medium text-slate-700"
+                  className="p-2 border rounded-lg hover:border-amber-500 text-left font-medium text-slate-700"
                 >
                   New Delhi (Connaught Pl.)
                 </button>
@@ -717,7 +879,7 @@ export function Navbar() {
                     setCityArea("Mumbai, 400001");
                     setIsLocationModalOpen(false);
                   }}
-                  className="p-2 border rounded-lg hover:border-brand-500 text-left font-medium text-slate-700"
+                  className="p-2 border rounded-lg hover:border-amber-500 text-left font-medium text-slate-700"
                 >
                   Mumbai (Fort / Colaba)
                 </button>
@@ -727,7 +889,7 @@ export function Navbar() {
                     setCityArea("Hyderabad, 500081");
                     setIsLocationModalOpen(false);
                   }}
-                  className="p-2 border rounded-lg hover:border-brand-500 text-left font-medium text-slate-700"
+                  className="p-2 border rounded-lg hover:border-amber-500 text-left font-medium text-slate-700"
                 >
                   Hyderabad (Hitec City)
                 </button>

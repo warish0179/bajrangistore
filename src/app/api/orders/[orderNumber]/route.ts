@@ -28,7 +28,15 @@ export async function GET(
           orderBy: { timestamp: "asc" },
         },
         user: {
-          select: { name: true, email: true, phone: true },
+          select: { id: true, name: true, email: true, phone: true },
+        },
+        deliveryWorker: {
+          include: {
+            user: { select: { name: true, phone: true } },
+          },
+        },
+        paymentTransactions: {
+          orderBy: { createdAt: "desc" },
         },
       },
     });
@@ -72,26 +80,37 @@ export async function PATCH(
 
     // Customer cancellation
     if (action === "CANCEL") {
-      if (order.status !== "PENDING" && order.status !== "CONFIRMED" && order.status !== "PROCESSING") {
+      if (["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"].includes(order.status)) {
         return NextResponse.json({ error: "Order cannot be cancelled at this stage" }, { status: 400 });
       }
 
+      const isPaid = order.paymentStatus === "PAID";
       const updated = await prisma.order.update({
         where: { orderNumber },
         data: {
           status: "CANCELLED",
           cancelReason: cancelReason || "Customer requested cancellation",
-          paymentStatus: order.paymentStatus === "PAID" ? "REFUNDED" : "CANCELLED",
-          refundAmount: order.paymentStatus === "PAID" ? order.finalAmount : 0,
+          paymentStatus: isPaid ? "REFUNDED" : "CANCELLED",
+          refundAmount: isPaid ? order.finalAmount : 0,
         },
       });
+
+      // Restore wallet balance if paid
+      if (isPaid) {
+        await prisma.user.update({
+          where: { id: order.userId },
+          data: { walletBalance: { increment: order.finalAmount } },
+        });
+      }
 
       await prisma.orderTimeline.create({
         data: {
           orderId: order.id,
           status: "CANCELLED",
           title: "Order Cancelled",
-          description: cancelReason || "Cancelled by customer. Refund initiated.",
+          description: isPaid
+            ? `Cancelled by customer. ₹${order.finalAmount.toLocaleString()} credited back to BajrangiStore Wallet.`
+            : (cancelReason || "Cancelled by customer."),
           location: "Customer Care",
         },
       });
@@ -118,16 +137,16 @@ export async function PATCH(
           orderId: order.id,
           status: "RETURN_REQUESTED",
           title: "Return Pickup Requested",
-          description: returnReason || "Return request submitted. Courier agent will visit for inspection.",
-          location: "NexMart Reverse Logistics",
+          description: returnReason || "Return request submitted. Courier agent will visit for doorstep pickup.",
+          location: "Bajrangi Reverse Logistics",
         },
       });
 
       return NextResponse.json({ success: true, order: updated });
     }
 
-    // Admin or Seller updating status
-    if (status && (session.role === "ADMIN" || session.role === "SELLER")) {
+    // Admin, Seller, or Delivery Worker updating status
+    if (status && (session.role === "ADMIN" || session.role === "SELLER" || session.role === "DELIVERY_WORKER")) {
       const updated = await prisma.order.update({
         where: { orderNumber },
         data: {
@@ -140,10 +159,13 @@ export async function PATCH(
 
       const titleMap: Record<string, string> = {
         CONFIRMED: "Order Confirmed",
-        PROCESSING: "Items Packed & Manifest Created",
-        SHIPPED: `Dispatched via ${courierName || order.courierName || "Express Courier"}`,
+        SELLER_PROCESSING: "Seller Processing & Packing",
+        PACKED: "Shipment Packed & Ready",
+        READY_FOR_PICKUP: "Awaiting Courier Pickup",
+        ASSIGNED_TO_DELIVERY: "Assigned to Delivery Partner",
+        PICKED_UP: "Package Picked Up",
         OUT_FOR_DELIVERY: "Courier Executive is Out for Delivery",
-        DELIVERED: "Package Delivered to Customer",
+        DELIVERED: "Package Delivered to Recipient 📦",
         CANCELLED: "Order Cancelled",
       };
 
@@ -153,7 +175,7 @@ export async function PATCH(
           status,
           title: titleMap[status] || `Status updated to ${status}`,
           description: `Tracking ID: ${trackingNumber || order.trackingNumber || "N/A"}`,
-          location: location || "Fulfillment Hub",
+          location: location || "Bajrangi Fulfillment Hub",
         },
       });
 
