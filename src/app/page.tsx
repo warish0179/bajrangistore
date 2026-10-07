@@ -12,50 +12,61 @@ import { Sparkles, ArrowRight, ShieldCheck, Truck, Headphones, BadgePercent } fr
 export const revalidate = 60; // ISR cache revalidation
 
 export default async function HomePage() {
-  const [banners, categories, flashProducts, dealOfTheDay, featuredProducts, trendingProducts] =
-    await Promise.all([
-      prisma.banner.findMany({
-        where: { active: true, type: "HERO" },
-        orderBy: { sortOrder: "asc" },
-      }),
-      prisma.category.findMany({
-        include: {
-          _count: { select: { products: true } },
-        },
-        orderBy: { name: "asc" },
-      }),
-      prisma.product.findMany({
-        where: { isFlashDeal: true },
-        include: {
-          images: { orderBy: { sortOrder: "asc" } },
-          variants: true,
-        },
-        take: 4,
-      }),
-      prisma.product.findFirst({
-        where: { isDealOfTheDay: true },
-        include: {
-          images: { orderBy: { sortOrder: "asc" } },
-          variants: true,
-        },
-      }),
-      prisma.product.findMany({
-        where: { isFeatured: true },
-        include: {
-          images: { orderBy: { sortOrder: "asc" } },
-          variants: true,
-        },
-        take: 8,
-      }),
-      prisma.product.findMany({
-        orderBy: { reviewCount: "desc" },
-        include: {
-          images: { orderBy: { sortOrder: "asc" } },
-          variants: true,
-        },
-        take: 8,
-      }),
-    ]);
+  let banners: any[] = [];
+  let categories: any[] = [];
+  let flashProducts: any[] = [];
+  let dealOfTheDay: any = null;
+  let featuredProducts: any[] = [];
+  let trendingProducts: any[] = [];
+
+  try {
+    [banners, categories, flashProducts, dealOfTheDay, featuredProducts, trendingProducts] =
+      await Promise.all([
+        prisma.banner.findMany({
+          where: { active: true, type: "HERO" },
+          orderBy: { sortOrder: "asc" },
+        }),
+        prisma.category.findMany({
+          include: {
+            _count: { select: { products: true } },
+          },
+          orderBy: { name: "asc" },
+        }),
+        prisma.product.findMany({
+          where: { isFlashDeal: true },
+          include: {
+            images: { orderBy: { sortOrder: "asc" } },
+            variants: true,
+          },
+          take: 4,
+        }),
+        prisma.product.findFirst({
+          where: { isDealOfTheDay: true },
+          include: {
+            images: { orderBy: { sortOrder: "asc" } },
+            variants: true,
+          },
+        }),
+        prisma.product.findMany({
+          where: { isFeatured: true },
+          include: {
+            images: { orderBy: { sortOrder: "asc" } },
+            variants: true,
+          },
+          take: 8,
+        }),
+        prisma.product.findMany({
+          orderBy: { reviewCount: "desc" },
+          include: {
+            images: { orderBy: { sortOrder: "asc" } },
+            variants: true,
+          },
+          take: 8,
+        }),
+      ]);
+  } catch (error) {
+    console.error("HomePage data fetching error:", error);
+  }
 
   return (
     <div className="space-y-10">
