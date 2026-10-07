@@ -216,7 +216,15 @@ export default function ProductDetailPage({
                       : "border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100"
                   }`}
                 >
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={img.url}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800";
+                    }}
+                  />
                 </button>
               ))}
             </div>
@@ -239,6 +247,10 @@ export default function ProductDetailPage({
               src={currentImage}
               alt={product.title}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 cursor-zoom-in"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src =
+                  "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800";
+              }}
             />
           </div>
         </div>

@@ -99,6 +99,12 @@ export function ProductCard({ product }: ProductCardProps) {
           alt={product.title}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (!target.src.includes("photo-1505740420928")) {
+              target.src = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800";
+            }
+          }}
         />
       </Link>
 

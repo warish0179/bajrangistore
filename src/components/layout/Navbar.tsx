@@ -39,9 +39,24 @@ export function Navbar() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-  const [pincode, setPincode] = useState("560038");
-  const [cityArea, setCityArea] = useState("Bengaluru, Indiranagar");
+  const [pincode, setPincode] = useState("846009");
+  const [cityArea, setCityArea] = useState("Darbhanga, Bihar");
+
+  // Sync Pincode & location with localStorage & PincodeDeliveryModal
+  useEffect(() => {
+    const savedPin = localStorage.getItem("bajrangi_pincode_v1");
+    const savedCity = localStorage.getItem("bajrangi_city_area_v1");
+    if (savedPin) setPincode(savedPin);
+    if (savedCity) setCityArea(savedCity);
+
+    const handlePinUpdate = (e: any) => {
+      if (e.detail?.pincode) setPincode(e.detail.pincode);
+      if (e.detail?.cityLabel) setCityArea(e.detail.cityLabel);
+    };
+
+    window.addEventListener("bajrangi-pincode-updated", handlePinUpdate);
+    return () => window.removeEventListener("bajrangi-pincode-updated", handlePinUpdate);
+  }, []);
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -207,13 +222,15 @@ export function Navbar() {
 
           {/* Location Delivery Selector (Desktop) */}
           <button
-            onClick={() => setIsLocationModalOpen(true)}
-            className="hidden lg:flex items-center gap-2 text-xs text-left px-2 py-1.5 rounded-lg hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700"
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("bajrangi-open-pincode-modal"))}
+            className="hidden lg:flex items-center gap-2 text-xs text-left px-2.5 py-1.5 rounded-xl hover:bg-slate-800 transition-all border border-slate-700/60 hover:border-amber-500/50 cursor-pointer shadow-xs group"
+            title="Change Delivery Pincode & Exact Address"
           >
-            <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+            <MapPin className="w-4 h-4 text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
             <div>
-              <div className="text-[10px] text-slate-400 font-medium">Deliver to</div>
-              <div className="font-semibold text-white truncate max-w-[130px]">{cityArea}</div>
+              <div className="text-[10px] text-slate-400 font-medium leading-tight">Deliver to</div>
+              <div className="font-bold text-amber-300 truncate max-w-[140px] leading-tight">{cityArea}</div>
             </div>
           </button>
 
@@ -805,97 +822,6 @@ export function Navbar() {
             </div>
           </div>
           <div className="flex-1" onClick={() => setIsMobileMenuOpen(false)} />
-        </div>
-      )}
-
-      {/* Pincode & Delivery Location Modal */}
-      {isLocationModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-amber-600" /> Choose Delivery Location
-              </h3>
-              <button
-                onClick={() => setIsLocationModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-500 my-3">
-              Delivery options and speeds may vary based on your postal code. Enter your 6-digit pin code below:
-            </p>
-
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                maxLength={6}
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))}
-                placeholder="e.g. 560038"
-                className="flex-1 px-4 py-2 border rounded-xl font-mono text-sm focus:outline-amber-600"
-              />
-              <button
-                onClick={() => {
-                  if (pincode.length === 6) {
-                    setCityArea(`Pincode ${pincode}`);
-                    setIsLocationModalOpen(false);
-                  }
-                }}
-                className="bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs px-4 py-2 rounded-xl"
-              >
-                Apply
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-xs font-semibold text-slate-600">Quick Cities:</div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <button
-                  onClick={() => {
-                    setPincode("560038");
-                    setCityArea("Bengaluru, 560038");
-                    setIsLocationModalOpen(false);
-                  }}
-                  className="p-2 border rounded-lg hover:border-amber-500 text-left font-medium text-slate-700"
-                >
-                  Bengaluru (Indiranagar)
-                </button>
-                <button
-                  onClick={() => {
-                    setPincode("110001");
-                    setCityArea("New Delhi, 110001");
-                    setIsLocationModalOpen(false);
-                  }}
-                  className="p-2 border rounded-lg hover:border-amber-500 text-left font-medium text-slate-700"
-                >
-                  New Delhi (Connaught Pl.)
-                </button>
-                <button
-                  onClick={() => {
-                    setPincode("400001");
-                    setCityArea("Mumbai, 400001");
-                    setIsLocationModalOpen(false);
-                  }}
-                  className="p-2 border rounded-lg hover:border-amber-500 text-left font-medium text-slate-700"
-                >
-                  Mumbai (Fort / Colaba)
-                </button>
-                <button
-                  onClick={() => {
-                    setPincode("500081");
-                    setCityArea("Hyderabad, 500081");
-                    setIsLocationModalOpen(false);
-                  }}
-                  className="p-2 border rounded-lg hover:border-amber-500 text-left font-medium text-slate-700"
-                >
-                  Hyderabad (Hitec City)
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </header>
