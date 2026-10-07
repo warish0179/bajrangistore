@@ -21,14 +21,36 @@ function getResolvedDatabaseUrl(): string {
     path.resolve("./dev.db"),
   ];
 
+  let sourceDbPath: string | null = null;
   for (const candidate of candidates) {
     try {
       if (fs.existsSync(candidate)) {
-        return `file:${candidate}`;
+        sourceDbPath = candidate;
+        break;
       }
     } catch {
       // ignore
     }
+  }
+
+  // When deployed to Vercel/serverless, /var/task is read-only.
+  // Copy SQLite to /tmp so both READ and WRITE (orders, auth, reviews) work seamlessly!
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    const tmpDbPath = path.join("/tmp", "dev.db");
+    try {
+      if (sourceDbPath && (!fs.existsSync(tmpDbPath) || fs.statSync(tmpDbPath).size === 0)) {
+        fs.copyFileSync(sourceDbPath, tmpDbPath);
+      }
+      if (fs.existsSync(tmpDbPath)) {
+        return `file:${tmpDbPath}`;
+      }
+    } catch (err) {
+      console.error("Failed to copy SQLite database to /tmp:", err);
+    }
+  }
+
+  if (sourceDbPath) {
+    return `file:${sourceDbPath}`;
   }
 
   // Fallback to default relative to cwd
