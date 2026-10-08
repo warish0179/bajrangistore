@@ -60,7 +60,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       }
     }
 
-    if (!token) {
+    if (!token || token.trim() === "" || token === "deleted") {
       return null;
     }
 

@@ -34,7 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchSession = async () => {
     try {
-      const res = await fetch("/api/auth/me");
+      const res = await fetch(`/api/auth/me?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
@@ -107,18 +113,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    setUser(null);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch(`/api/auth/logout?_t=${Date.now()}`, {
+        method: "POST",
+        cache: "no-store",
+      });
     } catch (e) {
       console.error("Logout request error", e);
     } finally {
       setUser(null);
       try {
-        document.cookie = "bajrangi_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        document.cookie = "nexmart_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        const cookiesToClear = ["bajrangi_token", "nexmart_token", "token", "session"];
+        const domains = ["", `.${window.location.hostname}`, window.location.hostname];
+        for (const c of cookiesToClear) {
+          for (const d of domains) {
+            const domainAttr = d ? `; domain=${d}` : "";
+            document.cookie = `${c}=; path=/${domainAttr}; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0`;
+          }
+        }
+        localStorage.removeItem("bajrangi_user");
+        sessionStorage.clear();
       } catch {}
       showToast("Logged out successfully", "info");
-      window.location.href = "/";
+      window.location.replace("/");
     }
   };
 
