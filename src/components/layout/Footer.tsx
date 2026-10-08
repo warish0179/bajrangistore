@@ -96,22 +96,42 @@ export function Footer() {
           <h4 className="text-white font-bold text-sm mb-4">Partner with Us</h4>
           <ul className="space-y-2.5">
             <li>
-              <Link href="/seller" className="hover:text-amber-400 text-amber-300 transition-colors font-medium flex items-center gap-1.5">
+              <Link
+                href="/seller"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-amber-400 text-amber-300 transition-colors font-medium flex items-center gap-1.5"
+              >
                 <Store className="w-3.5 h-3.5" /> Sell on BajrangiStore
               </Link>
             </li>
             <li>
-              <Link href="/delivery" className="hover:text-emerald-400 text-emerald-300 transition-colors font-medium flex items-center gap-1.5">
+              <Link
+                href="/delivery"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-emerald-400 text-emerald-300 transition-colors font-medium flex items-center gap-1.5"
+              >
                 <Truck className="w-3.5 h-3.5" /> Delivery Partner Portal
               </Link>
             </li>
             <li>
-              <Link href="/seller/register" className="hover:text-white transition-colors">
+              <Link
+                href="/seller/register"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors"
+              >
                 Become a Verified Merchant
               </Link>
             </li>
             <li>
-              <Link href="/admin" className="hover:text-purple-400 text-purple-300 transition-colors font-medium flex items-center gap-1.5">
+              <Link
+                href="/admin"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-purple-400 text-purple-300 transition-colors font-medium flex items-center gap-1.5"
+              >
                 <ShieldCheck className="w-3.5 h-3.5" /> Admin Controller Desk
               </Link>
             </li>

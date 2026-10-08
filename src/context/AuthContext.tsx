@@ -109,11 +109,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Logout request error", e);
+    } finally {
       setUser(null);
+      try {
+        document.cookie = "bajrangi_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "nexmart_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      } catch {}
       showToast("Logged out successfully", "info");
       window.location.href = "/";
-    } catch {
-      setUser(null);
     }
   };
 

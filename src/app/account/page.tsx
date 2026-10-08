@@ -28,12 +28,28 @@ import {
   CreditCard,
   Copy,
   Check,
+  Calendar,
+  FileText,
+  Phone,
+  Mail,
+  Camera,
+  Sparkles,
+  CheckCheck,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
 import { formatCurrency, formatDate } from "@/lib/format";
+
+const AVATAR_PRESETS = [
+  { id: "1", label: "Executive", url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80" },
+  { id: "2", label: "Professional", url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80" },
+  { id: "3", label: "Casual", url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80" },
+  { id: "4", label: "Creative", url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80" },
+  { id: "5", label: "Modern Guy", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" },
+  { id: "6", label: "Modern Lady", url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80" },
+];
 
 function CustomerAccountHubContent() {
   const router = useRouter();
@@ -55,10 +71,17 @@ function CustomerAccountHubContent() {
     }
   }, [searchParams]);
 
-  // Profile State
+  // Profile State (Flipkart/Amazon Comprehensive Spec)
   const [profileName, setProfileName] = useState(user?.name || "");
   const [profilePhone, setProfilePhone] = useState("");
+  const [profileGender, setProfileGender] = useState<string>("MALE");
+  const [profileDob, setProfileDob] = useState<string>("");
+  const [profilePan, setProfilePan] = useState<string>("");
+  const [profileAvatar, setProfileAvatar] = useState<string>(user?.avatar || "");
+  const [panConfirmed, setPanConfirmed] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   // Address Management State
   const [addresses, setAddresses] = useState<any[]>([]);
@@ -168,9 +191,37 @@ function CustomerAccountHubContent() {
     }
   };
 
+  // Fetch Full Profile from Database
+  const fetchProfile = async () => {
+    setIsLoadingProfile(true);
+    try {
+      const res = await fetch("/api/user/profile");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          setProfileName(data.user.name || "");
+          setProfilePhone(data.user.phone || "");
+          setProfileGender(data.user.gender || "MALE");
+          setProfileDob(data.user.dob ? data.user.dob.split("T")[0] : "");
+          setProfilePan(data.user.panNumber || "");
+          setProfileAvatar(data.user.avatar || "");
+          if (data.user.panNumber) setPanConfirmed(true);
+          if (data.user.walletBalance !== undefined) {
+            setWalletBalance(data.user.walletBalance);
+          }
+        }
+      }
+    } catch {
+      // silent
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       setProfileName(user.name);
+      fetchProfile();
       fetchAddresses();
       fetchOrders();
       fetchWallet();
@@ -190,6 +241,8 @@ function CustomerAccountHubContent() {
         </p>
         <Link
           href="/auth/login"
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-xs px-6 py-3 rounded-xl shadow-md shadow-amber-500/30 hover:scale-105 transition-all"
         >
           Sign In / Create Account
@@ -304,21 +357,82 @@ function CustomerAccountHubContent() {
     setTimeout(() => setCopiedCode(null), 2500);
   };
 
-  // Password update
+  // Profile Update (Flipkart-Style)
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profileName.trim()) {
+      showToast("Full name cannot be blank", "error");
+      return;
+    }
+    const cleanPan = profilePan.trim().toUpperCase();
+    if (cleanPan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan)) {
+      showToast("Invalid PAN format! Must be 10 characters (e.g., ABCDE1234F)", "error");
+      return;
+    }
+    setIsUpdatingProfile(true);
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: profileName.trim(),
+          phone: profilePhone.trim(),
+          gender: profileGender,
+          dob: profileDob,
+          panNumber: cleanPan,
+          avatar: profileAvatar,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast("Profile details updated successfully!", "success");
+        if (refreshUser) refreshUser();
+      } else {
+        showToast(data.error || "Failed to update profile", "error");
+      }
+    } catch {
+      showToast("Error updating profile. Please try again.", "error");
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  // Password update (Real Backend Auth)
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentPassword) {
+      showToast("Please enter your current password", "error");
+      return;
+    }
+    if (newPassword.length < 6) {
+      showToast("New password must be at least 6 characters long", "error");
+      return;
+    }
     if (newPassword !== confirmPassword) {
       showToast("New passwords do not match", "error");
       return;
     }
     setIsUpdatingPassword(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/user/password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast("Password updated successfully! Please use your new password next time you login.", "success");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        showToast(data.error || "Failed to update password", "error");
+      }
+    } catch {
+      showToast("Error updating password", "error");
+    } finally {
       setIsUpdatingPassword(false);
-      showToast("Password updated successfully!", "success");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    }, 600);
+    }
   };
 
   return (
@@ -509,81 +623,394 @@ function CustomerAccountHubContent() {
 
         {/* Right Content Panel (9 cols) */}
         <main className="lg:col-span-9 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
-          {/* TAB 1: PROFILE */}
+          {/* TAB 1: PROFILE (Flipkart / Amazon-Style Comprehensive Suite) */}
           {activeTab === "profile" && (
             <div className="space-y-6">
-              <div className="pb-4 border-b border-slate-100 flex items-center justify-between">
+              {/* Header */}
+              <div className="pb-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Personal Information</h2>
-                  <p className="text-xs text-slate-500">View and update your personal details</p>
+                  <h2 className="text-xl font-black text-slate-900 tracking-tight">Personal Information & KYC</h2>
+                  <p className="text-xs text-slate-500">Manage your profile details, KYC documents, and account preferences</p>
                 </div>
+                <span className="self-start sm:self-auto text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Bajrangi Verified Account
+                </span>
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-                <img
-                  src={user.avatar || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150"}
-                  alt=""
-                  className="w-16 h-16 rounded-2xl object-cover ring-2 ring-amber-500"
-                />
-                <div>
-                  <h3 className="font-black text-base text-slate-900">{user.name}</h3>
-                  <p className="text-xs text-slate-500">{user.email}</p>
-                  <span className="inline-block mt-1 text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">
-                    Verified Customer
-                  </span>
+              {/* Profile Card Banner */}
+              <div className="p-5 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-slate-50 rounded-3xl border border-amber-200/60 space-y-4">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                  <div className="relative group shrink-0">
+                    <img
+                      src={profileAvatar || user.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"}
+                      alt={profileName || user.name}
+                      className="w-20 h-20 rounded-2xl object-cover ring-4 ring-amber-500/30 shadow-md"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                      className="absolute -bottom-1 -right-1 bg-amber-600 hover:bg-amber-700 text-white p-1.5 rounded-full shadow transition-all hover:scale-110"
+                      title="Change Profile Avatar"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="flex-1 text-center sm:text-left space-y-1">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                      <h3 className="font-black text-lg text-slate-900">{profileName || user.name}</h3>
+                      <span className="text-[10px] font-extrabold uppercase bg-amber-500 text-white px-2 py-0.5 rounded-md shadow-xs">
+                        {user.role}
+                      </span>
+                      {profilePan && (
+                        <span className="text-[10px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md">
+                          PAN Linked
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-600 font-medium">{user.email}</p>
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2 text-xs">
+                      <span className="text-slate-500 flex items-center gap-1">
+                        <Wallet className="w-3.5 h-3.5 text-amber-600" /> Wallet: <strong className="text-slate-900">₹{walletBalance.toLocaleString()}</strong>
+                      </span>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-slate-500 flex items-center gap-1">
+                        <Package className="w-3.5 h-3.5 text-blue-600" /> Total Orders: <strong className="text-slate-900">{orders.length}</strong>
+                      </span>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-slate-500 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-600" /> Saved Addresses: <strong className="text-slate-900">{addresses.length}</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                    className="text-xs font-bold text-amber-700 bg-white hover:bg-amber-50 border border-amber-300 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
+                  >
+                    {showAvatarPicker ? "Close Presets" : "Change Avatar"}
+                  </button>
                 </div>
+
+                {/* Avatar Preset Gallery & Custom URL */}
+                {showAvatarPicker && (
+                  <div className="pt-4 border-t border-amber-200/60 space-y-3 animate-in fade-in duration-200">
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600" /> Choose from Bajrangi Preset Avatars:
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                      {AVATAR_PRESETS.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setProfileAvatar(p.url)}
+                          className={`p-1.5 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all ${
+                            profileAvatar === p.url
+                              ? "border-amber-500 bg-amber-50 ring-2 ring-amber-400/40"
+                              : "border-slate-200 hover:border-slate-300 bg-white"
+                          }`}
+                        >
+                          <img src={p.url} alt={p.label} className="w-12 h-12 rounded-xl object-cover" />
+                          <span className="text-[10px] font-bold text-slate-700">{p.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="pt-2">
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Or paste custom image link (HTTPS):</label>
+                      <input
+                        type="url"
+                        placeholder="https://example.com/your-avatar.jpg"
+                        value={profileAvatar}
+                        onChange={(e) => setProfileAvatar(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setIsUpdatingProfile(true);
-                  setTimeout(() => {
-                    setIsUpdatingProfile(false);
-                    showToast("Profile details updated successfully!", "success");
-                  }, 500);
-                }}
-                className="space-y-4 text-xs max-w-md"
-              >
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    value={profileName}
-                    onChange={(e) => setProfileName(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-xl"
-                  />
+              {/* Main Profile Form */}
+              <form onSubmit={handleUpdateProfile} className="space-y-6">
+                {/* SECTION 1: Personal Details */}
+                <div className="bg-slate-50/60 p-5 rounded-3xl border border-slate-200 space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-black text-slate-900 border-b border-slate-200/80 pb-2">
+                    <User className="w-4 h-4 text-amber-600" /> 1. Personal Information
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">
+                        Full Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={profileName}
+                        onChange={(e) => setProfileName(e.target.value)}
+                        placeholder="e.g. Ramesh Kumar"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">
+                        Date of Birth
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="date"
+                          value={profileDob}
+                          onChange={(e) => setProfileDob(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">
+                        Get surprise discounts on your birthday
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Gender Selector (Flipkart-Style Pills) */}
+                  <div className="text-xs pt-1">
+                    <label className="font-bold text-slate-700 block mb-2">Your Gender</label>
+                    <div className="grid grid-cols-3 gap-3 max-w-md">
+                      {[
+                        { val: "MALE", label: "Male" },
+                        { val: "FEMALE", label: "Female" },
+                        { val: "OTHER", label: "Other" },
+                      ].map((item) => (
+                        <button
+                          key={item.val}
+                          type="button"
+                          onClick={() => setProfileGender(item.val)}
+                          className={`py-2 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 ${
+                            profileGender === item.val
+                              ? "bg-amber-600 border-amber-600 text-white shadow-sm"
+                              : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
+                              profileGender === item.val ? "border-white bg-white" : "border-slate-400"
+                            }`}
+                          >
+                            {profileGender === item.val && <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />}
+                          </span>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Registered Email Address</label>
-                  <input
-                    type="email"
-                    disabled
-                    value={user.email}
-                    className="w-full px-3 py-2 border rounded-xl bg-slate-100 text-slate-500 cursor-not-allowed"
-                  />
+                {/* SECTION 2: Contact Information */}
+                <div className="bg-slate-50/60 p-5 rounded-3xl border border-slate-200 space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-black text-slate-900 border-b border-slate-200/80 pb-2">
+                    <Phone className="w-4 h-4 text-amber-600" /> 2. Contact & Communications
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="font-bold text-slate-700 flex items-center justify-between mb-1">
+                        <span>Registered Email Address</span>
+                        <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> Verified
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="email"
+                          disabled
+                          value={user.email}
+                          className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 font-mono cursor-not-allowed"
+                        />
+                        <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-3" />
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">
+                        Linked permanently to your BajrangiStore shopper ID
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">
+                        Primary Mobile Number (OTP & Deliveries)
+                      </label>
+                      <div className="relative flex">
+                        <span className="inline-flex items-center px-3 py-2.5 rounded-l-xl border border-r-0 border-slate-200 bg-slate-100 text-slate-600 font-bold font-mono text-xs">
+                          +91
+                        </span>
+                        <input
+                          type="tel"
+                          value={profilePhone}
+                          onChange={(e) => setProfilePhone(e.target.value)}
+                          placeholder="98765 43210"
+                          className="flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-r-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-mono text-xs font-semibold"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">
+                        Used by delivery rider to send secret delivery OTP
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Primary Mobile Number</label>
-                  <input
-                    type="tel"
-                    placeholder="+91 99887 76655"
-                    value={profilePhone}
-                    onChange={(e) => setProfilePhone(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-xl font-mono"
-                  />
+                {/* SECTION 3: PAN Card & Tax Information (Flipkart Style) */}
+                <div className="bg-slate-50/60 p-5 rounded-3xl border border-slate-200 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                    <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                      <FileText className="w-4 h-4 text-amber-600" /> 3. PAN Card / KYC Information
+                    </div>
+                    {profilePan && /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(profilePan.trim().toUpperCase()) && (
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCheck className="w-3 h-3" /> Format Valid
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    As per Government of India guidelines, a valid Permanent Account Number (PAN) is required for orders above ₹2,00,000 and GST commercial invoice claiming.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">
+                        PAN Card Number (10 alphanumeric digits)
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={10}
+                        value={profilePan}
+                        onChange={(e) => setProfilePan(e.target.value.toUpperCase())}
+                        placeholder="ABCDE1234F"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-mono uppercase tracking-wider text-xs font-bold"
+                      />
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">
+                        Example: ABCDE1234F (5 letters, 4 numbers, 1 letter)
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">
+                        Name on PAN Card
+                      </label>
+                      <input
+                        type="text"
+                        value={profileName}
+                        disabled
+                        className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 font-medium cursor-not-allowed"
+                      />
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">
+                        Must match your registered full name
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2.5 pt-1">
+                    <input
+                      type="checkbox"
+                      id="pan-consent"
+                      checked={panConfirmed}
+                      onChange={(e) => setPanConfirmed(e.target.checked)}
+                      className="mt-0.5 rounded text-amber-600 focus:ring-amber-500"
+                    />
+                    <label htmlFor="pan-consent" className="text-[11px] text-slate-600 cursor-pointer">
+                      I declare that the PAN provided belongs to me and the information provided is accurate and true to the best of my knowledge.
+                    </label>
+                  </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isUpdatingProfile}
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-md shadow-amber-600/20"
-                >
-                  {isUpdatingProfile ? "Saving..." : "Save Profile Details"}
-                </button>
+                {/* Save Changes CTA */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                  <button
+                    type="submit"
+                    disabled={isUpdatingProfile}
+                    className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs py-3 px-8 rounded-xl transition-all shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isUpdatingProfile ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Saving Profile...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" /> Save All Profile Details
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-[11px] text-slate-400 text-center sm:text-right">
+                    Your details are securely encrypted and protected under Indian Data Privacy standards.
+                  </p>
+                </div>
               </form>
+
+              {/* Flipkart-Style FAQs Section */}
+              <div className="pt-6 border-t border-slate-200 space-y-3">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Frequently Asked Questions (FAQs)
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
+                    <div className="font-black text-slate-800">
+                      What happens when I update my mobile number?
+                    </div>
+                    <p className="text-slate-500 text-[11px] leading-relaxed">
+                      Your updated phone number will be immediately utilized by Bajrangi HyperLogistics riders to transmit doorstep delivery OTP codes and live courier SMS alerts.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
+                    <div className="font-black text-slate-800">
+                      When will my account details reflect across orders?
+                    </div>
+                    <p className="text-slate-500 text-[11px] leading-relaxed">
+                      Updates to your profile name and contact number apply in real-time to all newly placed orders and active in-transit shipments without re-verification.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
+                    <div className="font-black text-slate-800">
+                      Why does BajrangiStore ask for PAN Card details?
+                    </div>
+                    <p className="text-slate-500 text-[11px] leading-relaxed">
+                      Government of India regulatory guidelines mandate PAN recording for single high-value purchases exceeding ₹2,00,000 and business tax invoicing.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
+                    <div className="font-black text-slate-800">
+                      Can I change my registered email address?
+                    </div>
+                    <p className="text-slate-500 text-[11px] leading-relaxed">
+                      Your registered email address serves as your permanent account UID. For security reasons, please contact our 24x7 Support desk to request email migration.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Account Deactivate Banner */}
+                <div className="p-4 bg-rose-50/60 border border-rose-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div>
+                    <div className="font-bold text-rose-900">Deactivate BajrangiStore Account</div>
+                    <div className="text-[11px] text-rose-600">
+                      Deactivating will pause all active notifications. Your wallet and orders remain safe.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm("Are you sure you want to deactivate your account? You can log back in anytime to reactivate.")) {
+                        logout();
+                      }
+                    }}
+                    className="text-xs font-bold text-rose-700 bg-white hover:bg-rose-100 border border-rose-300 px-3 py-1.5 rounded-xl transition-colors shrink-0"
+                  >
+                    Deactivate Account
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

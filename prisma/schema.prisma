@@ -14,7 +14,9 @@ model User {
   passwordHash    String
   role            String            @default("CUSTOMER") // CUSTOMER, SELLER, DELIVERY_WORKER, ADMIN
   phone           String?
+  gender          String?           // MALE, FEMALE, OTHER
   dob             String?
+  panNumber       String?
   referralCode    String?
   avatar          String?
   walletBalance   Float             @default(500.0) // Welcome wallet bonus
